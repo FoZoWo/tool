@@ -1,0 +1,984 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#17152b">
+  <meta name="description" content="デジタル時計byFoZoWo。フォントやアニメーション、色、日付表示を自分好みにカスタマイズできます。">
+  <title>デジタル時計byFoZoWo</title>
+  <link rel="icon" href="/digital-clock-favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/digital-clock-logo.svg">
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f3ff;
+      --text: #24213a;
+      --muted: #77738e;
+      --accent: #7058ed;
+      --accent-2: #b06cf0;
+      --line: color-mix(in srgb, var(--accent) 19%, transparent);
+      --panel: rgba(255,255,255,.84);
+      --button: rgba(255,255,255,.9);
+      --shadow: 0 22px 70px rgba(65, 48, 143, .10);
+      --clock-font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", sans-serif;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]):not([data-theme="dark"]) {
+        color-scheme: dark;
+        --bg: #0b0c17; --text: #f5f2ff; --muted: #aaa6c6;
+        --panel: rgba(25,24,47,.88); --button: rgba(255,255,255,.055);
+        --shadow: 0 22px 70px rgba(0,0,0,.25);
+      }
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #0b0c17; --text: #f5f2ff; --muted: #aaa6c6;
+      --panel: rgba(25,24,47,.88); --button: rgba(255,255,255,.055);
+      --shadow: 0 22px 70px rgba(0,0,0,.25);
+    }
+    :root[data-theme="light"] {
+      color-scheme: light;
+      --bg: #f4f3ff; --text: #24213a; --muted: #77738e;
+      --panel: rgba(255,255,255,.84); --button: rgba(255,255,255,.9);
+      --shadow: 0 22px 70px rgba(65,48,143,.10);
+    }
+    * { box-sizing: border-box; }
+    html { min-height: 100%; background: var(--bg); }
+    body {
+      margin: 0; min-width: 280px; min-height: 100vh; min-height: 100svh;
+      color: var(--text);
+      background: radial-gradient(ellipse at 12% 5%, color-mix(in srgb,var(--accent-2) 13%, transparent), transparent 32rem),
+                  radial-gradient(ellipse at 90% 70%, color-mix(in srgb,var(--accent) 11%, transparent), transparent 34rem), var(--bg);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .screen {
+      height:100vh; height:100svh; min-height:100vh; min-height:100svh;
+      display:flex; flex-direction:column; overflow:hidden;
+      padding: env(safe-area-inset-top) max(16px,env(safe-area-inset-right)) env(safe-area-inset-bottom) max(16px,env(safe-area-inset-left));
+    }
+    header { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:62px; border-bottom:1px solid var(--line); }
+    h1 { margin:0; font-size:15px; line-height:1.4; font-weight:750; letter-spacing:.01em; }
+    .brand-title { display:flex; align-items:center; gap:8px; min-width:0; }
+    .fozowo-logo { width:26px; height:26px; object-fit:contain; flex:0 0 auto; }
+    .clock-logo { width:24px; height:24px; object-fit:contain; flex:0 0 auto; }
+    .header-actions { display:flex; align-items:center; gap:14px; }
+    .back-link { display:inline-flex; align-items:center; gap:7px; padding:8px 0 8px 4px; color:var(--muted); font-size:12px; font-weight:700; text-decoration:none; white-space:nowrap; }
+    .back-link:hover { color:var(--accent); }
+    .back-link svg { width:15px; height:15px; }
+    .settings-open { display:grid; place-items:center; width:42px; height:42px; padding:0; border:1px solid var(--line); border-radius:14px; color:var(--text); background:var(--button); cursor:pointer; transition:color .15s ease,border-color .15s ease,transform .15s ease; }
+    .settings-open:hover { color:var(--accent); border-color:var(--accent); transform:rotate(12deg); }
+    .settings-open svg { width:21px; height:21px; }
+    .fullscreen-open { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-width:42px; min-height:42px; padding:0 10px; border:1px solid var(--line); border-radius:14px; color:var(--text); background:var(--button); font:inherit; font-size:12px; font-weight:750; cursor:pointer; transition:color .15s ease,border-color .15s ease,background .15s ease; }
+    .fullscreen-open:hover { color:var(--accent); border-color:var(--accent); }
+    .fullscreen-open svg { width:19px; height:19px; flex:0 0 auto; }
+    .fullscreen-label { display:none; }
+    main { width:100%; min-width:0; min-height:0; flex:1; margin:0 auto; display:flex; flex-direction:column; justify-content:stretch; align-items:stretch; gap:8px; padding:clamp(6px,1.2vh,14px) 0; }
+    .clock-panel {
+      width:100%; min-width:0; min-height:0; flex:1; position:relative; isolation:isolate; overflow:hidden;
+      display:flex; flex-direction:column; justify-content:center;
+      padding:clamp(12px,3vh,38px) clamp(2px,1vw,16px);
+      text-align:center; border:1px solid var(--line); border-radius:clamp(14px,2.3vw,26px);
+      background:var(--panel); box-shadow:var(--shadow); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+    }
+    .clock-panel::before { content:""; position:absolute; z-index:-1; width:45vw; height:45vw; min-width:220px; min-height:220px; max-width:520px; max-height:520px; top:-72%; left:-14%; border-radius:50%; background:radial-gradient(circle, color-mix(in srgb,var(--accent-2) 17%,transparent), transparent 68%); pointer-events:none; }
+    .clock-panel::after { content:""; position:absolute; z-index:-1; width:44vw; height:44vw; min-width:220px; min-height:220px; max-width:500px; max-height:500px; right:-16%; bottom:-83%; border-radius:50%; background:radial-gradient(circle, color-mix(in srgb,var(--accent) 17%,transparent), transparent 68%); pointer-events:none; }
+    .time-wrap { display:flex; align-items:baseline; justify-content:center; gap:clamp(1px,.65vw,8px); width:100%; white-space:nowrap; font-variant-numeric:tabular-nums; font-feature-settings:"tnum"; line-height:1; }
+    .day-period { min-width:1.25em; color:var(--accent); font-family:var(--clock-font); font-size:clamp(10px,1.65vw,17px); font-weight:750; text-align:right; }
+    .time { font-family:var(--clock-font); font-size:clamp(64px,min(23vw,32vh),380px); font-weight:720; letter-spacing:-.075em; line-height:1.02; }
+    .seconds { color:var(--accent); font-family:var(--clock-font); font-size:clamp(27px,5.2vw,74px); font-weight:650; letter-spacing:-.045em; line-height:1.08; }
+    .seconds.hidden { display:none; }
+    .date { margin-top:clamp(12px,2.8vh,30px); color:var(--muted); font-family:var(--clock-font); font-size:clamp(13px,1.8vw,20px); font-weight:550; letter-spacing:.035em; font-variant-numeric:tabular-nums; }
+    .date.date-hidden { display:none !important; }
+    .accent-line { width:clamp(48px,7vw,72px); height:4px; margin:clamp(17px,2.8vh,25px) auto 0; border-radius:999px; background:linear-gradient(90deg,var(--accent),var(--accent-2)); opacity:.95; }
+    .quick-controls { display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:8px; width:100%; }
+    .control { min-height:40px; padding:9px 14px; border:1px solid var(--line); border-radius:12px; color:var(--muted); background:var(--button); font:inherit; font-size:12px; font-weight:750; cursor:pointer; transition:border-color .15s ease,color .15s ease,background .15s ease; }
+    .control:hover, .control[aria-pressed="true"] { color:var(--accent); border-color:var(--accent); }
+    .control[aria-pressed="true"] { background:color-mix(in srgb,var(--accent) 9%,transparent); }
+    .control.primary { color:white; border-color:transparent; background:linear-gradient(115deg,var(--accent),var(--accent-2)); box-shadow:0 7px 20px color-mix(in srgb,var(--accent) 20%,transparent); }
+    .control.primary:hover { filter:brightness(1.05); }
+    .settings-card { width:100%; max-width:820px; border:1px solid var(--line); border-radius:22px; overflow:auto; background:var(--panel); box-shadow:var(--shadow); max-height:min(90svh,900px); }
+    .settings-overlay[hidden] { display:none !important; }
+    body.modal-open { overflow:hidden; }
+    .settings-overlay { position:fixed; inset:0; z-index:100; display:grid; place-items:center; padding:20px; background:rgba(8,7,23,.66); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); opacity:0; visibility:hidden; transition:opacity .24s ease, visibility .24s ease; }
+    .settings-overlay.is-open { opacity:1; visibility:visible; }
+    .settings-card { transform:translateY(18px) scale(.975); opacity:0; transition:transform .28s cubic-bezier(.2,.75,.25,1), opacity .24s ease; }
+    .settings-overlay.is-open .settings-card { transform:translateY(0) scale(1); opacity:1; }
+    .settings-head { position:relative; }
+    .close-settings { display:grid; place-items:center; flex:0 0 38px; width:38px; height:38px; margin-left:auto; border:1px solid var(--line); border-radius:12px; color:var(--muted); background:var(--button); cursor:pointer; }
+    .close-settings:hover { color:var(--accent); border-color:var(--accent); }
+    .close-settings svg { width:19px; height:19px; }
+    .operator { padding:0 0 max(15px,env(safe-area-inset-bottom)); text-align:center; color:var(--muted); font-size:11px; letter-spacing:.04em; }
+    .operator a { color:inherit; text-decoration:none; transition:color .18s ease; }
+    .operator a:hover { color:var(--accent); text-decoration:underline; text-underline-offset:3px; }
+    .settings-head { display:flex; align-items:center; gap:12px; padding:18px 20px 16px; border-bottom:1px solid var(--line); }
+    .settings-symbol { width:40px; height:40px; flex:0 0 40px; display:grid; place-items:center; color:var(--accent); background:color-mix(in srgb,var(--accent) 11%,transparent); border-radius:13px; }
+    .settings-symbol svg { width:22px; height:22px; }
+    .settings-head h2 { margin:0; font-size:16px; letter-spacing:.01em; }
+    .settings-head p { margin:4px 0 0; color:var(--muted); font-size:12px; line-height:1.5; }
+    .save-note { margin-left:auto; color:var(--muted); font-size:11px; white-space:nowrap; }
+    .settings-body { padding:18px 20px 20px; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:20px 26px; }
+    .setting { min-width:0; }
+    .setting-label { display:block; margin:0 0 8px; font-size:13px; font-weight:800; }
+    .setting-help { margin:7px 0 0; color:var(--muted); font-size:11px; line-height:1.55; }
+    select { width:100%; min-height:43px; padding:9px 38px 9px 12px; border:1px solid var(--line); border-radius:11px; color:var(--text); background:var(--button); font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+    option { color:#24213a; background:#fff; }
+    .native-select-source { position:absolute !important; width:1px !important; height:1px !important; padding:0 !important; margin:-1px !important; overflow:hidden !important; clip:rect(0,0,0,0) !important; white-space:nowrap !important; border:0 !important; opacity:0 !important; pointer-events:none !important; }
+    .custom-select { position:relative; width:100%; }
+    .custom-select-trigger { display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; min-height:46px; padding:10px 13px; border:1px solid var(--line); border-radius:13px; background:var(--button); color:var(--text); font:inherit; font-size:13px; font-weight:650; text-align:left; cursor:pointer; transition:border-color .16s ease,box-shadow .16s ease,background .16s ease; }
+    .custom-select-trigger:hover,.custom-select-trigger[aria-expanded="true"] { border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 10%,transparent); }
+    .custom-select-current { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .custom-select-chevron { width:17px; height:17px; flex:0 0 auto; color:var(--muted); transition:transform .18s ease; }
+    .custom-select-trigger[aria-expanded="true"] .custom-select-chevron { transform:rotate(180deg); color:var(--accent); }
+    .custom-select-menu { position:fixed; z-index:300; min-width:180px; max-height:min(340px,calc(100dvh - 24px)); overflow:auto; overscroll-behavior:contain; padding:6px; border:1px solid var(--line); border-radius:15px; background:var(--panel); box-shadow:0 20px 55px rgba(0,0,0,.22); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); transform-origin:top center; animation:selectPopupIn .16s ease-out; }
+    .custom-select-menu[hidden] { display:none !important; }
+    .custom-select-option { display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; min-height:42px; padding:9px 10px; border:0; border-radius:9px; background:transparent; color:var(--text); text-align:left; font:inherit; font-size:12px; cursor:pointer; }
+    .custom-select-option:hover,.custom-select-option:focus-visible { background:color-mix(in srgb,var(--accent) 9%,var(--button)); outline:none; }
+    .custom-select-option[aria-selected="true"] { color:var(--accent); background:color-mix(in srgb,var(--accent) 11%,var(--button)); font-weight:800; }
+    .custom-option-copy { min-width:0; line-height:1.4; }
+    .custom-option-check { flex:0 0 auto; color:var(--accent); font-size:16px; font-weight:900; }
+    .font-option-preview { display:block; margin-top:2px; color:var(--muted); font-size:16px; line-height:1.1; letter-spacing:.02em; }
+    @keyframes selectPopupIn { from { opacity:0; transform:translateY(-4px) scale(.985); } to { opacity:1; transform:translateY(0) scale(1); } }
+    .custom-color-editor { margin-top:10px; padding:13px; border:1px solid var(--line); border-radius:14px; background:color-mix(in srgb,var(--accent) 4%,var(--button)); }
+    .custom-color-editor[hidden] { display:none !important; }
+    .color-editor-top { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+    .color-editor-top strong { display:block; font-size:12px; }
+    .color-editor-top p { margin:4px 0 0; font-size:11px; color:var(--muted); }
+    #customColorPicker { width:48px; height:42px; padding:3px; border:1px solid var(--line); border-radius:11px; background:var(--button); cursor:pointer; }
+    .color-code-label { margin-bottom:6px; font-size:11px; }
+    .hex-edit-row { display:flex; align-items:center; gap:8px; }
+    #customHexInput { width:100%; min-width:0; height:42px; padding:9px 11px; border:1px solid var(--line); border-radius:10px; background:var(--button); color:var(--text); font:600 13px ui-monospace,Consolas,monospace; text-transform:uppercase; }
+    .apply-color-button { min-height:42px; padding:0 14px; border:0; border-radius:10px; color:#fff; background:linear-gradient(120deg,var(--accent),var(--accent-2)); font:inherit; font-size:12px; font-weight:800; cursor:pointer; white-space:nowrap; }
+    .apply-color-button:hover { filter:brightness(1.07); }
+    .animation-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .animation-option { min-width:0; min-height:79px; display:grid; grid-template-columns:42px minmax(0,1fr); grid-template-rows:auto auto; align-content:center; align-items:center; column-gap:10px; row-gap:3px; padding:10px 11px; text-align:left; border:1px solid var(--line); border-radius:13px; background:var(--button); color:var(--text); cursor:pointer; }
+    .animation-option[aria-pressed="true"] { border:2px solid var(--accent); padding:9px 10px; background:color-mix(in srgb,var(--accent) 7%,var(--button)); }
+    .animation-preview { grid-row:1 / span 2; display:grid; place-items:center; width:42px; height:42px; border-radius:10px; color:var(--accent); background:color-mix(in srgb,var(--accent) 10%,transparent); font-family:ui-monospace,monospace; font-weight:800; font-size:11px; }
+    .animation-option strong { align-self:end; font-size:12px; }
+    .animation-option small { align-self:start; color:var(--muted); font-size:10px; line-height:1.3; }
+    .accent-choices { display:flex; flex-wrap:wrap; gap:8px; }
+    .accent-choice { display:flex; align-items:center; gap:7px; min-height:38px; padding:7px 10px; border:1px solid var(--line); border-radius:11px; background:var(--button); color:var(--text); font:inherit; font-size:12px; font-weight:700; cursor:pointer; }
+    .accent-choice[aria-pressed="true"] { border:2px solid var(--accent); padding:6px 9px; }
+    .swatch { width:15px; height:15px; border-radius:50%; box-shadow:inset 0 0 0 1px rgba(0,0,0,.08); }
+    .swatch.purple { background:linear-gradient(135deg,#7058ed,#b06cf0); }
+    .swatch.blue { background:linear-gradient(135deg,#2864db,#50bce9); }
+    .swatch.pink { background:linear-gradient(135deg,#cf3687,#f58eb7); }
+    .swatch.green { background:linear-gradient(135deg,#11785e,#66cba0); }
+    .settings-footer { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 20px; border-top:1px solid var(--line); background:color-mix(in srgb,var(--accent) 4%,transparent); }
+    .settings-footer p { margin:0; color:var(--muted); font-size:11px; line-height:1.5; }
+    .reset-button { flex:0 0 auto; padding:8px 11px; border:1px solid var(--line); border-radius:10px; background:var(--button); color:var(--muted); font:inherit; font-size:11px; font-weight:750; cursor:pointer; }
+    .reset-button:hover { color:var(--accent); border-color:var(--accent); }
+    .tick-fade { animation: tickFade .28s ease-out; }
+    .tick-pop { animation: tickPop .26s cubic-bezier(.2,.8,.25,1.15); }
+    .tick-glow { animation: tickGlow .48s ease-out; }
+    @keyframes tickFade { from { opacity:.35; transform:translateY(3px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes tickPop { from { transform:scale(.91); } to { transform:scale(1); } }
+    @keyframes tickGlow { 0% { text-shadow:0 0 0 transparent; } 40% { text-shadow:0 0 22px color-mix(in srgb,var(--accent) 58%,transparent); } 100% { text-shadow:0 0 0 transparent; } }
+    :focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
+    @media (max-width:650px) {
+      .screen { padding-right:max(9px,env(safe-area-inset-right)); padding-left:max(9px,env(safe-area-inset-left)); }
+      header { min-height:48px; flex:0 0 auto; } h1 { font-size:13px; } .fozowo-logo { width:22px; height:22px; } .clock-logo { width:22px; height:22px; } .header-actions { gap:7px; } .settings-open { width:38px; height:38px; border-radius:12px; }
+      .back-link { font-size:11px; gap:4px; } .back-link svg { width:13px; height:13px; }
+      main { gap:4px; padding-top:4px; padding-bottom:4px; }
+      .clock-panel { padding:16px 2px; border-radius:15px; }
+      .time { font-size:clamp(64px,min(31vw,31vh),230px); letter-spacing:-.085em; }
+      .seconds { font-size:clamp(24px,7.2vw,48px); }
+      .day-period { min-width:1.05em; font-size:10px; }
+      .quick-controls { gap:6px; padding:13px 12px 0; } .control { min-height:38px; padding:8px 11px; font-size:11px; }
+      .settings-overlay { padding:10px; }
+      .settings-card { max-height:calc(100svh - 20px); border-radius:18px; }
+      .settings-head { padding:14px 12px 13px; gap:9px; } .settings-symbol { width:34px; height:34px; flex-basis:34px; }
+      .settings-head h2 { font-size:14px; } .settings-head p { font-size:11px; } .save-note { display:none; }
+      .close-settings { flex-basis:34px; width:34px; height:34px; }
+      .settings-body { grid-template-columns:minmax(0,1fr); gap:17px; padding:16px 12px; }
+      .animation-option { min-height:70px; padding:8px; grid-template-columns:36px minmax(0,1fr); column-gap:8px; }
+      .animation-option[aria-pressed="true"] { padding:7px; } .animation-preview { width:36px; height:36px; }
+      .settings-footer { padding:11px 12px; }
+      .custom-select-trigger { min-height:44px; }
+      .custom-color-editor { padding:11px; }
+    }
+    @media (max-width:360px) {
+      .time { font-size:clamp(52px,min(29vw,27vh),115px); letter-spacing:-.085em; }
+      .seconds { font-size:clamp(19px,6vw,27px); }
+      .header-actions { gap:6px; } .back-link { font-size:10px; }
+      h1 { font-size:11px; } .brand-title { gap:5px; } .fozowo-logo { width:18px; height:18px; } .clock-logo { width:19px; height:19px; }
+      .settings-open, .fullscreen-open { width:35px; min-width:35px; min-height:35px; height:35px; border-radius:11px; padding:0; }
+      .fullscreen-open svg { width:17px; height:17px; }
+      .animation-grid { grid-template-columns:1fr; }
+      .quick-controls .control { flex:1 1 auto; }
+    }
+    /* 全画面中はタイトル・戻るリンク・運営表示を隠し、設定と解除だけを残す。 */
+    html.clock-fullscreen,
+    html.clock-fullscreen body { width:100%; height:100%; min-height:100%; overflow:hidden; }
+    html.clock-fullscreen .screen { min-height:100%; height:100%; padding-top:env(safe-area-inset-top); padding-right:max(10px,env(safe-area-inset-right)); padding-bottom:env(safe-area-inset-bottom); padding-left:max(10px,env(safe-area-inset-left)); }
+    html.clock-fullscreen h1,
+    html.clock-fullscreen .back-link,
+    html.clock-fullscreen .operator { display:none !important; }
+    html.clock-fullscreen header { min-height:46px; flex:0 0 auto; border-bottom:none; }
+    html.clock-fullscreen .header-actions { margin-left:auto; gap:8px; }
+    html.clock-fullscreen .fullscreen-label { display:inline; }
+    html.clock-fullscreen .fullscreen-open { min-height:38px; padding:0 11px; border-radius:12px; }
+    html.clock-fullscreen main { width:100%; min-height:0; flex:1; gap:0; padding:8px 0 10px; }
+    html.clock-fullscreen .clock-panel { display:flex; flex:1; min-height:0; padding:clamp(15px,4vh,50px) 3px; border-radius:clamp(14px,2vw,25px); }
+    html.clock-fullscreen .time { font-size:clamp(64px,min(30vw,36vh),440px); }
+    html.clock-fullscreen .date { margin-top:clamp(14px,3vh,30px); }
+    html.clock-fullscreen .accent-line { margin-top:clamp(12px,2vh,22px); }
+    /* Fullscreen API未対応のスマートフォン向けフォールバック。 */
+    html.clock-fullscreen.fallback-fullscreen .screen { position:fixed; inset:0; z-index:1; width:100%; height:100vh; height:100dvh; min-height:100vh; min-height:100dvh; overflow:auto; background:var(--bg); }
+    @media (max-width:650px) {
+      html.clock-fullscreen .time { font-size:clamp(44px,min(23vw,29vh),180px); letter-spacing:-.075em; }
+      html.clock-fullscreen .seconds { font-size:clamp(18px,5.5vw,38px); }
+      html.clock-fullscreen .day-period { font-size:clamp(9px,2.4vw,13px); }
+      html.clock-fullscreen .clock-panel { padding:24px 2px; }
+      html.clock-fullscreen .date { font-size:clamp(12px,3.5vw,18px); }
+      html.clock-fullscreen .fullscreen-open { min-height:38px; padding:0 9px; font-size:11px; }
+      html.clock-fullscreen .header-actions { gap:7px; }
+    }
+    @media (max-width:360px) {
+      html.clock-fullscreen .time { font-size:clamp(36px,min(20vw,24vh),76px); }
+      html.clock-fullscreen .seconds { font-size:clamp(19px,6vw,27px); }
+      html.clock-fullscreen .fullscreen-open { min-height:35px; padding:0 7px; }
+    }
+
+    .share-open { display:grid; place-items:center; width:42px; height:42px; padding:0; border:1px solid var(--line); border-radius:14px; color:var(--text); background:var(--button); cursor:pointer; transition:color .15s ease,border-color .15s ease,transform .15s ease; }
+    .share-open:hover { color:var(--accent); border-color:var(--accent); transform:translateY(-1px); }
+    .share-open svg { width:20px; height:20px; }
+    .share-overlay[hidden] { display:none !important; }
+    .share-overlay { position:fixed; inset:0; z-index:110; display:grid; place-items:center; padding:18px; background:rgba(8,7,23,.66); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); opacity:0; visibility:hidden; transition:opacity .22s ease,visibility .22s ease; }
+    .share-overlay.is-open { opacity:1; visibility:visible; }
+    .share-card { width:min(100%,440px); max-height:calc(100svh - 28px); overflow:auto; border:1px solid var(--line); border-radius:24px; background:var(--panel); color:var(--text); box-shadow:var(--shadow); transform:translateY(16px) scale(.975); opacity:0; transition:transform .26s cubic-bezier(.2,.75,.25,1),opacity .22s ease; }
+    .share-overlay.is-open .share-card { transform:translateY(0) scale(1); opacity:1; }
+    .share-head { display:flex; align-items:center; gap:11px; padding:17px 18px; border-bottom:1px solid var(--line); }
+    .share-head-icon { display:grid; place-items:center; width:40px; height:40px; flex:0 0 40px; border-radius:13px; color:var(--accent); background:color-mix(in srgb,var(--accent) 11%,transparent); }
+    .share-head-icon svg { width:22px; height:22px; }
+    .share-head h2 { margin:0; font-size:16px; }
+    .share-head p { margin:4px 0 0; font-size:12px; line-height:1.5; color:var(--muted); }
+    .share-close { display:grid; place-items:center; width:36px; height:36px; flex:0 0 36px; margin-left:auto; border:1px solid var(--line); border-radius:11px; background:var(--button); color:var(--muted); cursor:pointer; }
+    .share-close svg { width:18px; height:18px; }
+    .share-content { padding:18px; display:grid; gap:14px; }
+    .share-qr-wrap { display:grid; justify-items:center; gap:9px; padding:14px 10px 12px; border:1px solid var(--line); border-radius:18px; background:color-mix(in srgb,var(--accent) 3%,var(--button)); }
+    .share-qr { display:block; width:min(56vw,218px); height:auto; aspect-ratio:1; background:white; border-radius:10px; padding:7px; image-rendering:pixelated; }
+    .share-qr-caption { color:var(--muted); font-size:12px; text-align:center; }
+    .share-url-label { color:var(--muted); font-size:12px; font-weight:750; }
+    .share-url-row { display:flex; align-items:stretch; gap:7px; }
+    .share-url { min-width:0; flex:1; height:44px; padding:0 11px; border:1px solid var(--line); border-radius:11px; background:var(--button); color:var(--text); font:600 12px ui-monospace,Consolas,monospace; }
+    .share-copy,.share-native { display:inline-flex; justify-content:center; align-items:center; gap:7px; min-height:44px; padding:0 13px; border:1px solid var(--line); border-radius:11px; color:var(--text); background:var(--button); font:inherit; font-size:12px; font-weight:800; cursor:pointer; }
+    .share-copy:hover { border-color:var(--accent); color:var(--accent); }
+    .share-native { width:100%; color:#fff; border-color:transparent; background:linear-gradient(115deg,var(--accent),var(--accent-2)); }
+    .share-copy svg,.share-native svg { width:17px; height:17px; flex:0 0 auto; }
+    .share-status { min-height:17px; margin:0; color:var(--muted); text-align:center; font-size:11px; }
+    html.clock-fullscreen .share-open { display:none !important; }
+    @media (max-width:650px) {
+      .share-open { width:38px; height:38px; border-radius:12px; }
+      .share-overlay { padding:10px; }
+      .share-card { max-height:calc(100svh - 20px); border-radius:19px; }
+      .share-head { padding:14px 12px; gap:9px; }
+      .share-head h2 { font-size:14px; } .share-head p { font-size:11px; }
+      .share-content { padding:13px 12px; gap:11px; }
+      .share-qr { width:min(48vw,184px); }
+      .share-url-row { flex-direction:column; }
+      .share-copy { width:100%; }
+    }
+    @media (prefers-reduced-motion: reduce) { .share-overlay,.share-card { transition:none !important; } }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,*::before,*::after { transition:none !important; animation:none !important; scroll-behavior:auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="screen">
+    <header>
+      <h1 class="brand-title"><img class="fozowo-logo" src="/fozowologo.png" alt="FoZoWo" onerror="this.style.display='none'"><img class="clock-logo" src="/digital-clock-logo.svg" alt=""><span>デジタル時計byFoZoWo</span></h1>
+      <div class="header-actions">
+        <button class="settings-open" type="button" id="settingsOpen" aria-label="設定を開く" aria-haspopup="dialog" aria-controls="settingsOverlay" title="かんたんカスタマイズ">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.1.9-1.1 1.9-1.4-.5a7.7 7.7 0 0 1-1.7 1l-.3 1.5h-2.2l-.3-1.5a7.7 7.7 0 0 1-1.7-1l-1.4.5-1.1-1.9 1.1-.9a7.4 7.4 0 0 1 0-2l-1.1-.9 1.1-1.9 1.4.5a7.7 7.7 0 0 1 1.7-1l.3-1.5h2.2l.3 1.5a7.7 7.7 0 0 1 1.7 1l1.4-.5 1.1 1.9-1.1.9a7.4 7.4 0 0 1 0 2Z" transform="translate(-1 -2) scale(.96)"/></svg>
+        </button>
+        <button class="share-open" type="button" id="shareOpen" aria-label="時計を共有" aria-haspopup="dialog" aria-controls="shareOverlay" title="共有・URL・二次元コード">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.7 10.7 6.6-4.2M8.7 13.3l6.6 4.2"/></svg>
+        </button>
+        <button class="fullscreen-open" type="button" id="fullscreenButton" aria-label="全画面表示" aria-pressed="false" title="全画面表示">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3M21 16v3a2 2 0 0 1-2 2h-3"/></svg>
+          <span class="fullscreen-label" id="fullscreenLabel">全画面表示</span>
+        </button>
+        <a class="back-link" href="https://tool.fozowo.com/index.html" aria-label="ツール一覧に戻る">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+          ツール一覧に戻る
+        </a>
+      </div>
+    </header>
+    <main>
+      <section class="clock-panel" aria-label="現在時刻">
+        <div class="time-wrap" aria-live="off">
+          <span class="day-period" id="dayPeriod"></span>
+          <span class="time" id="hours">00</span><span class="time" aria-hidden="true">:</span><span class="time" id="minutes">00</span>
+          <span class="seconds" id="seconds">:00</span>
+        </div>
+        <div class="date" id="date">日付を読み込み中…</div>
+        <div class="accent-line" aria-hidden="true"></div>
+      </section>
+    </main>
+    <footer class="operator"><a href="https://www.fozowo.com" aria-label="FoZoWo公式ホームページを開く">運営：FoZoWo</a></footer>
+  </div>
+
+  <div class="share-overlay" id="shareOverlay" hidden>
+    <section class="share-card" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
+      <div class="share-head">
+        <div class="share-head-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.7 10.7 6.6-4.2M8.7 13.3l6.6 4.2"/></svg></div>
+        <div><h2 id="shareTitle">デジタル時計を共有</h2><p>URLを送るか、二次元コードを読み取って開けます。</p></div>
+        <button class="share-close" type="button" id="shareClose" aria-label="共有画面を閉じる" title="閉じる"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
+      </div>
+      <div class="share-content">
+        <div class="share-qr-wrap">
+          <img class="share-qr" alt="デジタル時計を開く二次元コード" width="218" height="218" src="qr.png">
+          <div class="share-qr-caption">スマートフォンのカメラで読み取ってください</div>
+        </div>
+        <div>
+          <label class="share-url-label" for="shareUrl">共有URL</label>
+          <div class="share-url-row">
+            <input class="share-url" id="shareUrl" type="text" readonly value="https://tool.fozowo.com/digitalclock/" aria-label="共有するURL">
+            <button class="share-copy" type="button" id="copyShareUrl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>URLをコピー</button>
+          </div>
+        </div>
+        <button class="share-native" type="button" id="nativeShareButton"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.7 10.7 6.6-4.2M8.7 13.3l6.6 4.2"/></svg>共有する</button>
+        <p class="share-status" id="shareStatus" aria-live="polite">リンクをコピーして送れます。</p>
+      </div>
+    </section>
+  </div>
+
+  <div class="settings-overlay" id="settingsOverlay" hidden>
+    <section class="settings-card" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="settings-head">
+        <div class="settings-symbol" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.1.9-1.1 1.9-1.4-.5a7.7 7.7 0 0 1-1.7 1l-.3 1.5h-2.2l-.3-1.5a7.7 7.7 0 0 1-1.7-1l-1.4.5-1.1-1.9 1.1-.9a7.4 7.4 0 0 1 0-2l-1.1-.9 1.1-1.9 1.4.5a7.7 7.7 0 0 1 1.7-1l.3-1.5h2.2l.3 1.5a7.7 7.7 0 0 1 1.7 1l1.4-.5 1.1 1.9-1.1.9a7.4 7.4 0 0 1 0 2Z" transform="translate(-1 -2) scale(.96)"/></svg>
+        </div>
+        <div>
+          <h2 id="settingsTitle">かんたんカスタマイズ</h2>
+          <p>好きな項目を選ぶだけ。変更はすぐ時計に反映されます。</p>
+        </div>
+        <button class="close-settings" type="button" id="settingsClose" aria-label="設定を閉じる" title="閉じる">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m18 6-12 12M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="quick-controls" aria-label="時計の基本操作">
+        <button class="control" type="button" data-mode="24" aria-pressed="true">24時間表示</button>
+        <button class="control" type="button" data-mode="12" aria-pressed="false">12時間表示</button>
+        <button class="control" type="button" id="secondsToggle" aria-pressed="true">秒を隠す</button>
+      </div>
+
+      <div class="settings-body">
+        <div class="setting">
+          <label class="setting-label" for="fontSelect">① 時計のフォント</label>
+          <select id="fontSelect">
+            <option value="system">標準 — OSに合わせる</option>
+            <option value="japanese">日本語ゴシック — 見やすい</option>
+            <option value="rounded">丸ゴシック — やわらかい</option>
+            <option value="yuGothic">游ゴシック — すっきり</option>
+            <option value="meiryo">メイリオ — 読みやすい</option>
+            <option value="notoSans">Noto Sans系 — シンプル</option>
+            <option value="mono">等幅・デジタル — 幅がそろう</option>
+            <option value="mincho">日本語明朝 — 上品</option>
+            <option value="arial">English · Arial</option>
+            <option value="verdana">English · Verdana</option>
+            <option value="trebuchet">English · Trebuchet MS</option>
+            <option value="georgia">English · Georgia</option>
+            <option value="times">English · Times New Roman</option>
+            <option value="tahoma">English · Tahoma</option>
+            <option value="segoe">English · Segoe UI</option>
+            <option value="impact">English · Impact</option>
+            <option value="courier">English · Courier New</option>
+            <option value="consolas">English · Consolas</option>
+            <option value="cambria">English · Cambria</option>
+            <option value="garamond">English · Garamond</option>
+            <option value="palatino">English · Palatino Linotype</option>
+            <option value="century">English · Century Gothic</option>
+            <option value="franklin">English · Franklin Gothic</option>
+            <option value="comic">English · Comic Sans MS</option>
+            <option value="rockwell">English · Rockwell</option>
+          </select>
+          <p class="setting-help">日本語フォントと英語フォントを選べます。端末内のフォントを使うため追加通信はありません。</p>
+        </div>
+
+        <div class="setting">
+          <span class="setting-label" id="themeLabel">② 画面の明るさ</span>
+          <select id="themeSelect" aria-labelledby="themeLabel">
+            <option value="auto">自動 — 端末の設定に合わせる</option>
+            <option value="light">ライト — 明るい背景</option>
+            <option value="dark">ダーク — 暗い背景</option>
+          </select>
+          <p class="setting-help">見やすい明るさを選べます。</p>
+        </div>
+
+        <div class="setting">
+          <span class="setting-label">③ 数字のアニメーション</span>
+          <div class="animation-grid" role="group" aria-label="数字のアニメーションを選択">
+            <button class="animation-option" type="button" data-animation="none" aria-pressed="false"><span class="animation-preview">12:34</span><strong>なし</strong><small>動きをなくして軽く</small></button>
+            <button class="animation-option" type="button" data-animation="fade" aria-pressed="true"><span class="animation-preview">12:34</span><strong>フェード</strong><small>ふわっと切り替え</small></button>
+            <button class="animation-option" type="button" data-animation="pop" aria-pressed="false"><span class="animation-preview">12:34</span><strong>ポップ</strong><small>軽く弾む動き</small></button>
+            <button class="animation-option" type="button" data-animation="glow" aria-pressed="false"><span class="animation-preview">12:34</span><strong>光る</strong><small>数字がやさしく光る</small></button>
+          </div>
+          <p class="setting-help">秒が切り替わるたびに選んだ効果が動きます。「なし」は最も軽量です。</p>
+        </div>
+
+        <div class="setting">
+          <span class="setting-label">④ 時計のアクセントカラー</span>
+          <div class="accent-choices" role="group" aria-label="アクセントカラーを選択">
+            <button class="accent-choice" type="button" data-accent="purple" aria-pressed="true"><span class="swatch purple" aria-hidden="true"></span>すみれ</button>
+            <button class="accent-choice" type="button" data-accent="blue" aria-pressed="false"><span class="swatch blue" aria-hidden="true"></span>ブルー</button>
+            <button class="accent-choice" type="button" data-accent="pink" aria-pressed="false"><span class="swatch pink" aria-hidden="true"></span>ピンク</button>
+            <button class="accent-choice" type="button" data-accent="green" aria-pressed="false"><span class="swatch green" aria-hidden="true"></span>グリーン</button>
+            <button class="accent-choice" type="button" id="customAccentButton" data-accent="custom" aria-pressed="false"><span class="swatch custom-swatch" id="customAccentSwatch" aria-hidden="true"></span>カスタム</button>
+          </div>
+          <div class="custom-color-editor" id="customColorEditor" hidden>
+            <div class="color-editor-top">
+              <div><strong>好きな色を設定</strong><p>色見本またはカラーコードを使えます。</p></div>
+              <input type="color" id="customColorPicker" value="#8b76ff" aria-label="カスタムアクセントカラーを選択">
+            </div>
+            <label class="setting-label color-code-label" for="customHexInput">カラーコード</label>
+            <div class="hex-edit-row">
+              <input type="text" id="customHexInput" value="#8B76FF" maxlength="7" inputmode="text" autocomplete="off" spellcheck="false" aria-describedby="customHexHelp">
+              <button type="button" class="apply-color-button" id="applyCustomHex">適用</button>
+            </div>
+            <p class="setting-help" id="customHexHelp">例：#8B76FF（#から始まる6桁の色コード）</p>
+          </div>
+          <p class="setting-help">時刻・日付・ボタンなどのアクセントカラーを変更できます。</p>
+        </div>
+
+        <div class="setting">
+          <label class="setting-label" for="dateVisibilitySelect">⑤ 日付を表示する</label>
+          <select id="dateVisibilitySelect">
+            <option value="show">表示する</option>
+            <option value="hide">表示しない</option>
+          </select>
+          <p class="setting-help">日付がいらない場合は、時計だけの表示にできます。</p>
+        </div>
+
+        <div class="setting">
+          <label class="setting-label" for="dateFormatSelect">⑥ 日付の表示形式</label>
+          <select id="dateFormatSelect">
+            <option value="long">2026年10月23日 金曜日</option>
+            <option value="numeric">2026/10/23</option>
+            <option value="short">10月23日（金）</option>
+            <option value="weekday">金曜日のみ</option>
+          </select>
+          <p class="setting-help">好みの日付形式を選んでください。変更はすぐ反映されます。</p>
+        </div>
+
+      </div>
+
+      <div class="settings-footer">
+        <p id="settingsStatus" aria-live="polite">選んだ設定は自動で保存されます。</p>
+        <button class="reset-button" type="button" id="resetSettings">初期設定に戻す</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    (() => {
+      'use strict';
+      const $ = id => document.getElementById(id);
+      const root = document.documentElement;
+      const storageKey = 'fozowoClockCustomSettingsV1';
+      const defaults = { hourMode: 24, showSeconds: true, font: 'system', animation: 'fade', theme: 'auto', accent: 'purple', customAccent: '#8B76FF', showDate: true, dateFormat: 'long' };
+      const fonts = {
+        system: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", sans-serif',
+        japanese: '"Yu Gothic UI", "Meiryo", "Hiragino Kaku Gothic ProN", sans-serif',
+        rounded: '"Hiragino Maru Gothic ProN", "Yu Gothic UI", "Meiryo", sans-serif',
+        yuGothic: '"Yu Gothic", "Yu Gothic UI", "Meiryo", sans-serif',
+        meiryo: '"Meiryo", "Yu Gothic UI", sans-serif',
+        notoSans: '"Noto Sans JP", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif',
+        mono: 'ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, "Courier New", monospace',
+        mincho: '"Yu Mincho", "Hiragino Mincho ProN", "Noto Serif JP", serif',
+        arial: 'Arial, "Helvetica Neue", "Yu Gothic UI", sans-serif',
+        verdana: 'Verdana, Geneva, "Yu Gothic UI", sans-serif',
+        trebuchet: '"Trebuchet MS", "Yu Gothic UI", sans-serif',
+        georgia: 'Georgia, "Yu Mincho", serif',
+        times: '"Times New Roman", Times, "Yu Mincho", serif',
+        tahoma: 'Tahoma, Geneva, "Yu Gothic UI", sans-serif',
+        segoe: '"Segoe UI", "Yu Gothic UI", sans-serif',
+        impact: 'Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif',
+        courier: '"Courier New", Courier, "Yu Gothic UI", monospace',
+        consolas: 'Consolas, "Lucida Console", "Courier New", monospace',
+        cambria: 'Cambria, Georgia, "Yu Mincho", serif',
+        garamond: 'Garamond, "Times New Roman", "Yu Mincho", serif',
+        palatino: '"Palatino Linotype", Palatino, "Yu Mincho", serif',
+        century: '"Century Gothic", CenturyGothic, "Yu Gothic UI", sans-serif',
+        franklin: '"Franklin Gothic Medium", "Arial Narrow", "Yu Gothic UI", sans-serif',
+        comic: '"Comic Sans MS", "Comic Sans", "Yu Gothic UI", cursive',
+        rockwell: 'Rockwell, "Roboto Slab", "Yu Mincho", serif'
+      };
+      const accents = {
+        purple: ['#7058ed', '#b06cf0'],
+        blue: ['#2864db', '#50bce9'],
+        pink: ['#cf3687', '#f58eb7'],
+        green: ['#11785e', '#66cba0']
+      };
+      let settings = { ...defaults };
+      try {
+        const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
+        if (saved && typeof saved === 'object') {
+          if ([12, 24].includes(Number(saved.hourMode))) settings.hourMode = Number(saved.hourMode);
+          if (typeof saved.showSeconds === 'boolean') settings.showSeconds = saved.showSeconds;
+          if (Object.hasOwn(fonts, saved.font)) settings.font = saved.font;
+          if (['none', 'fade', 'pop', 'glow'].includes(saved.animation)) settings.animation = saved.animation;
+          if (['auto', 'light', 'dark'].includes(saved.theme)) settings.theme = saved.theme;
+          if (Object.hasOwn(accents, saved.accent) || saved.accent === 'custom') settings.accent = saved.accent;
+          if (typeof saved.customAccent === 'string' && /^#[0-9a-fA-F]{6}$/.test(saved.customAccent)) settings.customAccent = saved.customAccent.toUpperCase();
+          if (typeof saved.showDate === 'boolean') settings.showDate = saved.showDate;
+          if (['long', 'numeric', 'short', 'weekday'].includes(saved.dateFormat)) settings.dateFormat = saved.dateFormat;
+        }
+      } catch (_) { /* 保存機能が使えなくても時計は動作します */ }
+
+      const hours = $('hours'), minutes = $('minutes'), seconds = $('seconds');
+      const period = $('dayPeriod'), date = $('date');
+      const secondsToggle = $('secondsToggle');
+      const fullscreenButton = $('fullscreenButton'), fullscreenLabel = $('fullscreenLabel');
+      const modeButtons = [...document.querySelectorAll('[data-mode]')];
+      const animationButtons = [...document.querySelectorAll('[data-animation]')];
+      const accentButtons = [...document.querySelectorAll('[data-accent]')];
+      const fontSelect = $('fontSelect'), themeSelect = $('themeSelect');
+      const settingsOverlay = $('settingsOverlay'), settingsOpen = $('settingsOpen'), settingsClose = $('settingsClose');
+      const shareOverlay = $('shareOverlay'), shareOpen = $('shareOpen'), shareClose = $('shareClose');
+      const shareUrl = $('shareUrl'), shareStatus = $('shareStatus');
+      const shareLink = 'https://tool.fozowo.com/digitalclock/';
+      const dateVisibilitySelect = $('dateVisibilitySelect'), dateFormatSelect = $('dateFormatSelect');
+      const customAccentButton = $('customAccentButton');
+      const customColorEditor = $('customColorEditor');
+      const customColorPicker = $('customColorPicker');
+      const customHexInput = $('customHexInput');
+      const customAccentSwatch = $('customAccentSwatch');
+      const reducedMotion = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+
+      // ネイティブの選択メニューを、統一されたカスタムポップアップに置き換える。
+      const customSelects = new Map();
+      function initCustomSelects() {
+        document.querySelectorAll('.settings-body select').forEach(select => {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'custom-select';
+          wrapper.dataset.sourceId = select.id;
+          const trigger = document.createElement('button');
+          trigger.type = 'button';
+          trigger.className = 'custom-select-trigger';
+          trigger.id = select.id + 'Button';
+          trigger.setAttribute('aria-haspopup', 'listbox');
+          trigger.setAttribute('aria-expanded', 'false');
+          trigger.setAttribute('aria-controls', select.id + 'Menu');
+          const current = document.createElement('span');
+          current.className = 'custom-select-current';
+          const chevron = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          chevron.setAttribute('viewBox', '0 0 24 24');
+          chevron.setAttribute('fill', 'none');
+          chevron.setAttribute('stroke', 'currentColor');
+          chevron.setAttribute('stroke-width', '2');
+          chevron.setAttribute('stroke-linecap', 'round');
+          chevron.setAttribute('stroke-linejoin', 'round');
+          chevron.classList.add('custom-select-chevron');
+          chevron.setAttribute('aria-hidden', 'true');
+          const chevronPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          chevronPath.setAttribute('d', 'm6 9 6 6 6-6');
+          chevron.appendChild(chevronPath);
+          trigger.append(current, chevron);
+          const menu = document.createElement('div');
+          menu.className = 'custom-select-menu';
+          menu.id = select.id + 'Menu';
+          menu.setAttribute('role', 'listbox');
+          menu.setAttribute('aria-label', select.getAttribute('aria-labelledby') ? (document.getElementById(select.getAttribute('aria-labelledby'))?.textContent || '選択肢') : (select.previousElementSibling?.textContent || '選択肢'));
+          menu.hidden = true;
+          const optionButtons = [];
+          [...select.options].forEach(option => {
+            const choice = document.createElement('button');
+            choice.type = 'button';
+            choice.className = 'custom-select-option';
+            choice.setAttribute('role', 'option');
+            choice.dataset.value = option.value;
+            const copy = document.createElement('span');
+            copy.className = 'custom-option-copy';
+            copy.textContent = option.textContent;
+            if (select.id === 'fontSelect') {
+              copy.style.fontFamily = fonts[option.value] || fonts.system;
+              const preview = document.createElement('span');
+              preview.className = 'font-option-preview';
+              preview.textContent = '12:34  Aa';
+              preview.style.fontFamily = fonts[option.value] || fonts.system;
+              copy.appendChild(preview);
+            }
+            const check = document.createElement('span');
+            check.className = 'custom-option-check';
+            check.setAttribute('aria-hidden', 'true');
+            check.textContent = '✓';
+            choice.append(copy, check);
+            choice.addEventListener('click', () => {
+              select.value = option.value;
+              select.dispatchEvent(new Event('change', { bubbles: true }));
+              closeCustomMenu(menu, trigger, false);
+              trigger.focus();
+            });
+            menu.appendChild(choice);
+            optionButtons.push(choice);
+          });
+          select.classList.add('native-select-source');
+          select.setAttribute('aria-hidden', 'true');
+          select.tabIndex = -1;
+          select.insertAdjacentElement('afterend', wrapper);
+          wrapper.appendChild(trigger);
+          document.body.appendChild(menu);
+          const label = document.querySelector('label[for="' + select.id + '"]');
+          if (label) label.htmlFor = trigger.id;
+          customSelects.set(select.id, { select, wrapper, trigger, current, menu, optionButtons });
+          const open = () => openCustomMenu(select.id);
+          trigger.addEventListener('click', open);
+          trigger.addEventListener('keydown', event => {
+            if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault(); openCustomMenu(select.id);
+              const item = optionButtons.find(button => button.dataset.value === select.value) || optionButtons[0];
+              item?.focus();
+            }
+          });
+          select.addEventListener('change', () => syncCustomSelect(select.id));
+          syncCustomSelect(select.id);
+        });
+        document.addEventListener('click', event => {
+          if (event.target.closest('.custom-select') || event.target.closest('.custom-select-menu')) return;
+          closeAllCustomMenus();
+        });
+        document.addEventListener('keydown', event => {
+          const openMenu = [...customSelects.values()].find(item => !item.menu.hidden);
+          if (!openMenu) return;
+          if (event.key === 'Escape') {
+            event.preventDefault(); event.stopPropagation(); closeCustomMenu(openMenu.menu, openMenu.trigger, true); return;
+          }
+          const items = openMenu.optionButtons;
+          const idx = items.indexOf(document.activeElement);
+          if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            const next = event.key === 'ArrowDown' ? (idx + 1) % items.length : (idx - 1 + items.length) % items.length;
+            items[next]?.focus();
+          } else if (event.key === 'Home' || event.key === 'End') {
+            event.preventDefault(); (event.key === 'Home' ? items[0] : items[items.length - 1])?.focus();
+          }
+        });
+        window.addEventListener('resize', closeAllCustomMenus);
+        document.querySelector('.settings-card')?.addEventListener('scroll', closeAllCustomMenus, { passive: true });
+      }
+      function syncCustomSelect(id) {
+        const item = customSelects.get(id);
+        if (!item) return;
+        const selected = item.select.options[item.select.selectedIndex];
+        item.current.textContent = selected ? selected.textContent : '';
+        item.trigger.disabled = item.select.disabled;
+        item.trigger.setAttribute('aria-disabled', String(item.select.disabled));
+        item.optionButtons.forEach(button => {
+          const active = button.dataset.value === item.select.value;
+          button.setAttribute('aria-selected', String(active));
+          button.tabIndex = active ? 0 : -1;
+          button.disabled = item.select.disabled;
+        });
+      }
+      function openCustomMenu(id) {
+        closeAllCustomMenus();
+        const item = customSelects.get(id);
+        if (!item) return;
+        const rect = item.trigger.getBoundingClientRect();
+        item.menu.hidden = false;
+        item.trigger.setAttribute('aria-expanded', 'true');
+        item.menu.style.width = Math.max(rect.width, 200) + 'px';
+        item.menu.style.maxWidth = 'calc(100vw - 20px)';
+        const maxHeight = Math.min(340, window.innerHeight - 24);
+        item.menu.style.maxHeight = maxHeight + 'px';
+        item.menu.style.left = Math.min(Math.max(10, rect.left), window.innerWidth - Math.max(rect.width, 200) - 10) + 'px';
+        const naturalHeight = Math.min(item.menu.scrollHeight, maxHeight);
+        const below = window.innerHeight - rect.bottom - 8;
+        const above = rect.top - 8;
+        const top = below >= Math.min(naturalHeight, 190) || below >= above ? rect.bottom + 7 : Math.max(10, rect.top - naturalHeight - 7);
+        item.menu.style.top = Math.min(top, window.innerHeight - 12) + 'px';
+        item.menu.style.transformOrigin = top < rect.top ? 'bottom center' : 'top center';
+      }
+      function closeCustomMenu(menu, trigger, restoreFocus) {
+        menu.hidden = true;
+        const item = [...customSelects.values()].find(entry => entry.menu === menu);
+        if (item) item.trigger.setAttribute('aria-expanded', 'false');
+        if (restoreFocus && trigger) trigger.focus();
+      }
+      function closeAllCustomMenus() {
+        customSelects.forEach(item => { if (!item.menu.hidden) closeCustomMenu(item.menu, item.trigger, false); });
+      }
+      let settingsCloseTimer = 0;
+
+      let shareCloseTimer = 0;
+      function openShare() {
+        window.clearTimeout(shareCloseTimer);
+        closeAllCustomMenus();
+        shareOverlay.hidden = false;
+        shareOverlay.classList.remove('is-open');
+        document.body.classList.add('modal-open');
+        void shareOverlay.offsetWidth;
+        window.requestAnimationFrame(() => shareOverlay.classList.add('is-open'));
+        shareClose.focus();
+      }
+      function closeShare() {
+        if (shareOverlay.hidden) return;
+        shareOverlay.classList.remove('is-open');
+        if (settingsOverlay.hidden) document.body.classList.remove('modal-open');
+        window.clearTimeout(shareCloseTimer);
+        shareCloseTimer = window.setTimeout(() => {
+          shareOverlay.hidden = true;
+          shareOpen.focus();
+        }, reducedMotion.matches ? 0 : 260);
+      }
+      async function copyShareLink() {
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(shareLink);
+          } else {
+            shareUrl.focus(); shareUrl.select(); shareUrl.setSelectionRange(0, shareUrl.value.length);
+            const copied = document.execCommand('copy');
+            if (!copied) throw new Error('copy unavailable');
+          }
+          shareStatus.textContent = 'URLをコピーしました。';
+        } catch (_) {
+          shareUrl.focus(); shareUrl.select(); shareUrl.setSelectionRange(0, shareUrl.value.length);
+          shareStatus.textContent = 'URLを選択しました。コピーしてください。';
+        }
+      }
+      shareOpen.addEventListener('click', openShare);
+      shareClose.addEventListener('click', closeShare);
+      shareOverlay.addEventListener('click', event => { if (event.target === shareOverlay) closeShare(); });
+      $('copyShareUrl').addEventListener('click', copyShareLink);
+      $('nativeShareButton').addEventListener('click', async () => {
+        if (navigator.share) {
+          try {
+            await navigator.share({ title: 'デジタル時計byFoZoWo', text: 'デジタル時計byFoZoWoを使ってみてください。', url: shareLink });
+            shareStatus.textContent = '共有画面を開きました。';
+          } catch (error) {
+            if (error && error.name !== 'AbortError') shareStatus.textContent = '共有できない場合はURLをコピーしてください。';
+          }
+        } else {
+          await copyShareLink();
+          if (shareStatus.textContent === 'URLをコピーしました。') shareStatus.textContent = 'この端末では共有機能を使えないため、URLをコピーしました。';
+        }
+      });
+
+      function openSettings() {
+        window.clearTimeout(settingsCloseTimer);
+        settingsOverlay.hidden = false;
+        settingsOverlay.classList.remove('is-open');
+        document.body.classList.add('modal-open');
+        // Force the closed state to be painted before starting the entrance transition.
+        void settingsOverlay.offsetWidth;
+        window.requestAnimationFrame(() => settingsOverlay.classList.add('is-open'));
+        settingsClose.focus();
+      }
+      function closeSettings() {
+        if (settingsOverlay.hidden) return;
+        settingsOverlay.classList.remove('is-open');
+        if (shareOverlay.hidden) document.body.classList.remove('modal-open');
+        window.clearTimeout(settingsCloseTimer);
+        settingsCloseTimer = window.setTimeout(() => {
+          settingsOverlay.hidden = true;
+          settingsOpen.focus();
+        }, reducedMotion.matches ? 0 : 280);
+      }
+      settingsOpen.addEventListener('click', openSettings);
+      settingsClose.addEventListener('click', closeSettings);
+      settingsOverlay.addEventListener('click', event => { if (event.target === settingsOverlay) closeSettings(); });
+      document.addEventListener('keydown', event => {
+        if (event.key !== 'Escape') return;
+        const openSelectMenu = [...customSelects.values()].find(item => !item.menu.hidden);
+        if (openSelectMenu) {
+          event.preventDefault();
+          closeCustomMenu(openSelectMenu.menu, openSelectMenu.trigger, true);
+          return;
+        }
+        if (!shareOverlay.hidden) closeShare();
+        else if (!settingsOverlay.hidden) closeSettings();
+        else if (root.classList.contains('fallback-fullscreen')) {
+          root.classList.remove('fallback-fullscreen');
+          syncFullscreenState();
+        }
+      });
+      const dateFormatters = {
+        long: new Intl.DateTimeFormat('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }),
+        numeric: new Intl.DateTimeFormat('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }),
+        short: new Intl.DateTimeFormat('ja-JP', { month: 'long', day: 'numeric', weekday: 'short' }),
+        weekday: new Intl.DateTimeFormat('ja-JP', { weekday: 'long' })
+      };
+      const formatters = {
+        24: new Intl.DateTimeFormat('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }),
+        12: new Intl.DateTimeFormat('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h12' })
+      };
+
+      function saveSettings() {
+        try { localStorage.setItem(storageKey, JSON.stringify(settings)); } catch (_) { /* 保存できない環境でも継続 */ }
+      }
+      function announce(message) { $('settingsStatus').textContent = message; }
+      function applyTheme() {
+        if (settings.theme === 'auto') root.removeAttribute('data-theme');
+        else root.setAttribute('data-theme', settings.theme);
+        themeSelect.value = settings.theme;
+        syncCustomSelect('themeSelect');
+      }
+      function lightenHex(hex, amount = .24) {
+        const clean = /^#[0-9a-fA-F]{6}$/.test(hex) ? hex.slice(1) : '8B76FF';
+        const rgb = [0, 2, 4].map(index => parseInt(clean.slice(index, index + 2), 16));
+        return '#' + rgb.map(value => Math.round(value + (255 - value) * amount).toString(16).padStart(2, '0')).join('').toUpperCase();
+      }
+      function applyAccent() {
+        const palette = settings.accent === 'custom'
+          ? [settings.customAccent, lightenHex(settings.customAccent)]
+          : (accents[settings.accent] || accents.purple);
+        root.style.setProperty('--accent', palette[0]);
+        root.style.setProperty('--accent-2', palette[1]);
+        root.style.setProperty('--line', `color-mix(in srgb, ${palette[0]} 19%, transparent)`);
+        accentButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.accent === settings.accent)));
+        if (customAccentSwatch) customAccentSwatch.style.background = `linear-gradient(135deg, ${settings.customAccent}, ${lightenHex(settings.customAccent)})`;
+        if (customColorPicker) customColorPicker.value = settings.customAccent;
+        if (customHexInput) customHexInput.value = settings.customAccent.toUpperCase();
+        if (customColorEditor) customColorEditor.hidden = settings.accent !== 'custom';
+      }
+      function applyFont() {
+        root.style.setProperty('--clock-font', fonts[settings.font] || fonts.system);
+        fontSelect.value = settings.font;
+        syncCustomSelect('fontSelect');
+      }
+      function applyDateSettings() {
+        dateVisibilitySelect.value = settings.showDate ? 'show' : 'hide';
+        dateFormatSelect.value = settings.dateFormat;
+        dateFormatSelect.disabled = !settings.showDate;
+        syncCustomSelect('dateVisibilitySelect');
+        syncCustomSelect('dateFormatSelect');
+        date.classList.toggle('date-hidden', !settings.showDate);
+      }
+      function applyButtons() {
+        modeButtons.forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.mode) === settings.hourMode)));
+        secondsToggle.setAttribute('aria-pressed', String(settings.showSeconds));
+        secondsToggle.textContent = settings.showSeconds ? '秒を隠す' : '秒を表示';
+        animationButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.animation === settings.animation)));
+      }
+      function applyAll() {
+        applyTheme(); applyAccent(); applyFont(); applyButtons(); applyDateSettings();
+      }
+      function setAnimatedText(element, value, animate) {
+        const previous = element.textContent;
+        if (previous === value) return;
+        element.textContent = value;
+        element.classList.remove('tick-fade', 'tick-pop', 'tick-glow');
+        if (animate && previous !== '' && settings.animation !== 'none' && !reducedMotion.matches) {
+          // Restart the short animation only on the part whose displayed value changed.
+          void element.offsetWidth;
+          element.classList.add('tick-' + settings.animation);
+        }
+      }
+      function updateClock(animate = true) {
+        const now = new Date();
+        const parts = formatters[settings.hourMode].formatToParts(now);
+        const values = {};
+        for (const part of parts) values[part.type] = part.value;
+        setAnimatedText(hours, values.hour || '00', animate);
+        setAnimatedText(minutes, values.minute || '00', animate);
+        setAnimatedText(seconds, settings.showSeconds ? ':' + (values.second || '00') : '', animate);
+        seconds.classList.toggle('hidden', !settings.showSeconds);
+        setAnimatedText(period, settings.hourMode === 12 ? (values.dayPeriod || '') : '', false);
+        date.textContent = dateFormatters[settings.dateFormat].format(now);
+        date.classList.toggle('date-hidden', !settings.showDate);
+      }
+      function commitSettings(message) { saveSettings(); applyButtons(); applyDateSettings(); updateClock(false); if (message) announce(message); }
+
+      modeButtons.forEach(button => button.addEventListener('click', () => {
+        settings.hourMode = Number(button.dataset.mode);
+        commitSettings(settings.hourMode === 24 ? '24時間表示に変更しました。' : '12時間表示に変更しました。');
+      }));
+      secondsToggle.addEventListener('click', () => {
+        settings.showSeconds = !settings.showSeconds;
+        commitSettings(settings.showSeconds ? '秒を表示します。' : '秒を隠しました。');
+      });
+      fontSelect.addEventListener('change', () => {
+        settings.font = fontSelect.value; applyFont(); saveSettings(); announce('フォントを変更しました。');
+      });
+      themeSelect.addEventListener('change', () => {
+        settings.theme = themeSelect.value; applyTheme(); saveSettings(); announce('画面の明るさを変更しました。');
+      });
+      animationButtons.forEach(button => button.addEventListener('click', () => {
+        settings.animation = button.dataset.animation;
+        animationButtons.forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+        saveSettings(); announce('アニメーションを「' + button.querySelector('strong').textContent + '」に変更しました。');
+      }));
+      accentButtons.forEach(button => button.addEventListener('click', () => {
+        settings.accent = button.dataset.accent;
+        applyAccent(); saveSettings();
+        announce(settings.accent === 'custom' ? 'カスタムカラーを選べます。' : 'アクセントカラーを変更しました。');
+      }));
+      function applyCustomAccent(hex, message = true) {
+        const normalized = String(hex || '').trim().toUpperCase();
+        if (!/^#[0-9A-F]{6}$/.test(normalized)) {
+          announce('色コードは # と6桁の英数字で入力してください。');
+          customHexInput?.focus();
+          return false;
+        }
+        settings.customAccent = normalized;
+        settings.accent = 'custom';
+        applyAccent(); saveSettings();
+        if (message) announce('カスタムアクセントカラーを適用しました。');
+        return true;
+      }
+      customColorPicker?.addEventListener('input', () => {
+        customHexInput.value = customColorPicker.value.toUpperCase();
+        applyCustomAccent(customColorPicker.value, false);
+      });
+      $('applyCustomHex')?.addEventListener('click', () => applyCustomAccent(customHexInput.value));
+      customHexInput?.addEventListener('keydown', event => {
+        if (event.key === 'Enter') { event.preventDefault(); applyCustomAccent(customHexInput.value); }
+      });
+      dateVisibilitySelect.addEventListener('change', () => {
+        settings.showDate = dateVisibilitySelect.value === 'show';
+        commitSettings(settings.showDate ? '日付を表示します。' : '日付を非表示にしました。');
+      });
+      dateFormatSelect.addEventListener('change', () => {
+        settings.dateFormat = dateFormatSelect.value;
+        commitSettings('日付の表示形式を変更しました。');
+      });
+      $('resetSettings').addEventListener('click', () => {
+        settings = { ...defaults };
+        applyAll(); saveSettings(); updateClock(false); announce('すべて初期設定に戻しました。');
+      });
+      function syncFullscreenState() {
+        const active = Boolean(document.fullscreenElement) || root.classList.contains('fallback-fullscreen');
+        root.classList.toggle('clock-fullscreen', active);
+        const label = active ? '全画面解除' : '全画面表示';
+        fullscreenLabel.textContent = label;
+        fullscreenButton.setAttribute('aria-label', active ? '全画面表示を解除' : '全画面表示');
+        fullscreenButton.setAttribute('aria-pressed', String(active));
+        fullscreenButton.title = active ? '全画面表示を解除' : '全画面表示';
+      }
+      fullscreenButton.addEventListener('click', async () => {
+        if (document.fullscreenElement) {
+          try { await document.exitFullscreen(); }
+          catch (_) { root.classList.remove('fallback-fullscreen'); }
+        } else if (root.classList.contains('fallback-fullscreen')) {
+          root.classList.remove('fallback-fullscreen');
+        } else {
+          try {
+            if (root.requestFullscreen) {
+              await root.requestFullscreen();
+            } else {
+              // iOS SafariなどFullscreen APIに対応しない環境でも全画面風レイアウトを使う。
+              root.classList.add('fallback-fullscreen');
+            }
+          } catch (_) {
+            root.classList.add('fallback-fullscreen');
+          }
+        }
+        syncFullscreenState();
+      });
+      document.addEventListener('fullscreenchange', syncFullscreenState);
+      window.addEventListener('orientationchange', () => window.setTimeout(syncFullscreenState, 150));
+      initCustomSelects();
+      applyAll();
+      syncFullscreenState();
+      updateClock(false);
+      function tick() { updateClock(true); window.setTimeout(tick, Math.max(40, 1000 - (Date.now() % 1000) + 8)); }
+      window.setTimeout(tick, Math.max(40, 1000 - (Date.now() % 1000) + 8));
+    })();
+  </script>
+</body>
+</html>
