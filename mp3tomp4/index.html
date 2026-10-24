@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#6558e8">
+<meta name="description" content="MP4動画から音声を取り出してMP3に変換。ブラウザー内で変換できます。">
+<title>MP4からMP3に変換｜FoZoWo ツール</title>
+<style>
+:root{color-scheme:light dark;--bg:#f6f7fc;--panel:#fff;--ink:#202238;--muted:#6d7188;--line:#e5e7f1;--purple:#6558e8;--purple2:#8c68ee;--soft:#f0edff;--green:#137b50;--greenbg:#e8f8ef;--red:#b42318;--shadow:0 18px 48px rgba(47,42,110,.09)}
+@media(prefers-color-scheme:dark){:root{--bg:#10111a;--panel:#1a1b29;--ink:#f3f2ff;--muted:#aaaac0;--line:#343548;--purple:#a79cff;--purple2:#bf9aff;--soft:#2a2647;--green:#81ddb0;--greenbg:#1b342b;--red:#ff9a91;--shadow:0 18px 48px rgba(0,0,0,.22)}}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 12% 0,rgba(141,104,238,.14),transparent 35rem),var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif;-webkit-font-smoothing:antialiased}button,input,select{font:inherit}button{cursor:pointer}.wrap{width:min(920px,calc(100% - 32px));margin:auto}.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 0}.brand{display:flex;align-items:center;gap:10px;color:inherit;text-decoration:none;font-weight:800}.brandmark{display:grid;place-items:center;width:40px;height:40px;border-radius:13px;background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff}.brandmark svg{width:22px;height:22px}.brand small{display:block;color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.08em}.home-link{color:var(--muted);text-decoration:none;font-size:13px;font-weight:700}.home-link:hover{color:var(--purple)}main{padding:20px 0 64px}.intro{text-align:center;margin:10px auto 28px}.eyebrow{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border:1px solid var(--line);background:var(--panel);border-radius:99px;color:var(--muted);font-size:12px;font-weight:750}.eyebrow-dot{width:7px;height:7px;border-radius:50%;background:#26a269}.intro h1{margin:16px 0 8px;font-size:clamp(32px,6vw,52px);line-height:1.12;letter-spacing:-.055em}.intro h1 span{color:var(--purple)}.intro p{max-width:570px;margin:0 auto;color:var(--muted);font-size:15px}.workspace{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(260px,.9fr);gap:18px;align-items:start}.panel{min-width:0;padding:23px;border:1px solid var(--line);border-radius:22px;background:var(--panel);box-shadow:var(--shadow)}.panel-title{display:flex;align-items:center;gap:10px;margin:0 0 17px;font-size:16px;font-weight:800}.step{display:grid;place-items:center;width:28px;height:28px;border-radius:9px;background:var(--soft);color:var(--purple);font-size:13px;font-weight:850}.dropzone{display:grid;justify-items:center;text-align:center;padding:28px 18px;border:2px dashed #c9c6ec;border-radius:17px;background:color-mix(in srgb,var(--soft) 37%,var(--panel));transition:border-color .15s,background .15s}.dropzone.drag{border-color:var(--purple);background:var(--soft)}.upload-icon{display:grid;place-items:center;width:54px;height:54px;border-radius:17px;background:var(--soft);color:var(--purple);margin-bottom:12px}.upload-icon svg{width:27px;height:27px}.dropzone strong{font-size:16px}.dropzone p{margin:4px 0 15px;color:var(--muted);font-size:12px}.btn{display:inline-flex;justify-content:center;align-items:center;gap:8px;min-height:44px;padding:10px 16px;border-radius:12px;border:1px solid var(--line);font-size:13px;font-weight:800;text-decoration:none;transition:transform .15s,filter .15s}.btn:hover:not(:disabled){filter:brightness(1.04);transform:translateY(-1px)}.btn:disabled{opacity:.45;cursor:not-allowed}.btn-primary{border-color:transparent;background:linear-gradient(115deg,var(--purple),var(--purple2));color:#fff;box-shadow:0 7px 16px rgba(101,88,232,.2)}.btn-secondary{background:var(--panel);color:var(--ink)}.btn svg{width:17px;height:17px;flex-shrink:0}input[type=file]{display:none}.file-info{display:none;margin-top:13px;padding:13px;border:1px solid var(--line);border-radius:13px}.file-info.show{display:flex;gap:11px;align-items:center}.file-icon{display:grid;place-items:center;flex-shrink:0;width:39px;height:43px;border-radius:10px;background:var(--soft);color:var(--purple)}.file-icon svg{width:21px;height:21px}.file-meta{min-width:0;flex:1}.file-name{overflow-wrap:anywhere;font-size:13px;font-weight:800}.file-size{color:var(--muted);font-size:11px}.remove{border:0;background:transparent;color:var(--muted);font-size:21px;padding:3px 7px}.settings{margin-top:20px}.label-row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;font-size:13px;font-weight:800}.label-row small{font-weight:500;color:var(--muted)}select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:11px;color:var(--ink);background:var(--panel)}.hint{display:flex;gap:8px;align-items:flex-start;margin:12px 0 0;color:var(--muted);font-size:11px}.hint svg{width:16px;height:16px;flex:none;margin-top:2px;color:var(--purple)}.convert-btn{width:100%;margin-top:18px;min-height:49px;font-size:14px}.status{display:none;margin-top:16px;padding:13px;border-radius:13px;background:var(--soft);font-size:12px}.status.show{display:block}.status-line{display:flex;align-items:center;gap:9px;font-weight:750}.spinner{width:15px;height:15px;border:2px solid color-mix(in srgb,var(--purple) 28%,transparent);border-top-color:var(--purple);border-radius:50%;animation:spin .8s linear infinite}.status[data-kind=error]{background:color-mix(in srgb,var(--red) 10%,var(--panel));color:var(--red)}.status[data-kind=success]{background:var(--greenbg);color:var(--green)}progress{display:block;width:100%;height:7px;margin-top:10px;accent-color:var(--purple)}.result{display:none;margin-top:17px;padding:17px;border:1px solid color-mix(in srgb,#25a56a 35%,var(--line));border-radius:16px;background:color-mix(in srgb,var(--greenbg) 55%,var(--panel))}.result.show{display:block}.result-head{display:flex;align-items:center;gap:9px;margin-bottom:5px;font-weight:850}.check{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--greenbg);color:var(--green)}.result p{margin:0 0 13px;color:var(--muted);font-size:12px;overflow-wrap:anywhere}.download{width:100%;background:var(--green);border-color:transparent;color:#fff}.right-panel{display:grid;gap:16px}.privacy{padding:18px;border:1px solid color-mix(in srgb,#25a56a 27%,var(--line));border-radius:17px;background:color-mix(in srgb,var(--greenbg) 52%,var(--panel))}.privacy-head{display:flex;align-items:center;gap:9px;font-weight:850;font-size:14px}.privacy-head svg{width:20px;height:20px;color:var(--green)}.privacy p{margin:7px 0 0;color:var(--muted);font-size:12px}.howto h2,.note h2{margin:0 0 14px;font-size:15px}.how-list{display:grid;gap:13px}.how-item{display:flex;gap:11px;align-items:flex-start}.how-num{display:grid;place-items:center;flex:none;width:27px;height:27px;border-radius:9px;background:var(--soft);color:var(--purple);font-size:12px;font-weight:850}.how-item strong{display:block;font-size:12px}.how-item p{margin:2px 0 0;color:var(--muted);font-size:11px}.note{padding:17px;border:1px solid var(--line);border-radius:17px;background:var(--panel)}.note p{margin:0;color:var(--muted);font-size:11px}.footer{text-align:center;color:var(--muted);font-size:11px;padding:4px 0 28px}.footer a{color:inherit;text-decoration:none}.footer a:hover{text-decoration:underline}@keyframes spin{to{transform:rotate(360deg)}}@media(max-width:760px){.workspace{grid-template-columns:1fr}.right-panel{grid-template-columns:1fr 1fr}.privacy{grid-column:1/-1}.panel{padding:18px}.intro{margin-top:12px}}@media(max-width:480px){.wrap{width:calc(100% - 22px)}.topbar{padding:15px 0}.brandmark{width:36px;height:36px}.intro p{font-size:13px}.right-panel{grid-template-columns:1fr}.privacy{grid-column:auto}.dropzone{padding:23px 12px}.home-link{font-size:12px}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<header class="wrap topbar">
+  <a class="brand" href="https://tool.fozowo.com/" aria-label="FoZoWo ツール一覧へ">
+    <span class="brandmark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5v7a2 2 0 0 0 2 2h2l3 3v-7l-3-3H6a2 2 0 0 0-2 2Z"/><path d="m14 9 6 6m0-6-6 6"/><path d="M14 4h6v6"/></svg></span>
+    <span>FoZoWo <small>TOOLBOX</small></span>
+  </a>
+  <a class="home-link" href="https://tool.fozowo.com/">← ツール一覧へ戻る</a>
+</header>
+<main class="wrap">
+  <section class="intro">
+    <span class="eyebrow"><span class="eyebrow-dot"></span> 無料・インストール不要</span>
+    <h1>MP4 <span>→</span> MP3</h1>
+    <p>動画から音声だけを取り出して、MP3ファイルに変換します。<br>ファイルを選んで、ボタンを押すだけ。</p>
+  </section>
+  <div class="workspace">
+    <section class="panel" aria-labelledby="step1-title">
+      <h2 class="panel-title" id="step1-title"><span class="step">1</span> 動画ファイルを選ぶ</h2>
+      <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="MP4動画を選択、またはここにドラッグ＆ドロップ">
+        <div class="upload-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m-4 4 4-4 4 4"/><path d="M20 16.5v2A1.5 1.5 0 0 1 18.5 20h-13A1.5 1.5 0 0 1 4 18.5v-2"/></svg></div>
+        <strong>ここに動画をドロップ</strong>
+        <p>または、端末からファイルを選択</p>
+        <button class="btn btn-secondary" type="button" id="pickBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg> MP4を選択</button>
+      </div>
+      <input id="fileInput" type="file" accept=".mp4,video/mp4,video/*">
+      <div class="file-info" id="fileInfo" aria-live="polite">
+        <div class="file-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="m10 9 5 3-5 3z"/></svg></div>
+        <div class="file-meta"><div class="file-name" id="fileName"></div><div class="file-size" id="fileSize"></div></div>
+        <button type="button" class="remove" id="removeBtn" aria-label="選択を解除" title="選択を解除">×</button>
+      </div>
+      <div class="settings">
+        <div class="label-row"><label for="bitrate">2. 音質を選ぶ</label><small>あとから変更できます</small></div>
+        <select id="bitrate" aria-label="MP3のビットレート">
+          <option value="128">標準（128 kbps・容量を抑える）</option>
+          <option value="192" selected>おすすめ（192 kbps・バランス）</option>
+          <option value="256">高音質（256 kbps）</option>
+          <option value="320">最高音質（320 kbps・容量大）</option>
+        </select>
+        <p class="hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></svg><span>変換しても元の動画は変更されません。長い動画や大きなファイルは、変換に時間がかかることがあります。</span></p>
+      </div>
+      <button class="btn btn-primary convert-btn" id="convertBtn" type="button" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg> MP3に変換する</button>
+      <div class="status" id="status" role="status" aria-live="polite"><div class="status-line"><span id="statusIcon"></span><span id="statusText"></span></div><progress id="progress" max="100" value="0" hidden></progress></div>
+      <section class="result" id="result" aria-live="polite">
+        <div class="result-head"><span class="check">✓</span> 変換が完了しました！</div>
+        <p id="resultName">MP3ファイルを保存できます。</p>
+        <a class="btn download" id="downloadBtn" href="#" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-5-5 5 5 5-5"/><path d="M5 17v3h14v-3"/></svg> MP3をダウンロード</a>
+      </section>
+    </section>
+    <aside class="right-panel">
+      <section class="privacy">
+        <div class="privacy-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="m9 15 2 2 4-4"/></svg> ファイルは端末内で処理</div>
+        <p>選んだ動画を変換サーバーへアップロードしません。変換処理はブラウザー内で行います。変換エンジンの読み込みにはインターネット接続が必要です。</p>
+      </section>
+      <section class="panel howto">
+        <h2>使い方はかんたん3ステップ</h2>
+        <div class="how-list">
+          <div class="how-item"><span class="how-num">1</span><div><strong>MP4動画を選択</strong><p>ファイルをドロップするか、選択ボタンを押します。</p></div></div>
+          <div class="how-item"><span class="how-num">2</span><div><strong>音質を選んで変換</strong><p>「MP3に変換する」を押して、完了まで待ちます。</p></div></div>
+          <div class="how-item"><span class="how-num">3</span><div><strong>MP3を保存</strong><p>完了後に表示されるダウンロードボタンを押します。</p></div></div>
+        </div>
+      </section>
+      <section class="note">
+        <h2>初回のご利用について</h2>
+        <p>初回は変換エンジン（約30MB前後）を読み込むため、開始まで少し時間がかかります。2回目以降はブラウザーのキャッシュにより読み込みが短くなる場合があります。</p>
+      </section>
+    </aside>
+  </div>
+</main>
+<footer class="wrap footer">FoZoWo ツールボックス · <a href="https://www.fozowo.com/">公式ホームページ</a></footer>
+<script type="module">
+const $ = id => document.getElementById(id);
+const fileInput=$('fileInput'),dropzone=$('dropzone'),pickBtn=$('pickBtn'),fileInfo=$('fileInfo'),fileName=$('fileName'),fileSize=$('fileSize'),removeBtn=$('removeBtn'),convertBtn=$('convertBtn'),statusBox=$('status'),statusText=$('statusText'),statusIcon=$('statusIcon'),progress=$('progress'),result=$('result'),resultName=$('resultName'),downloadBtn=$('downloadBtn');
+let selectedFile=null,ffmpeg=null,engineLoaded=false,outputUrl=null,busy=false;
+const fmtBytes=n=>n<1024*1024?`${(n/1024).toFixed(0)} KB`:`${(n/1024/1024).toFixed(1)} MB`;
+function showStatus(message,kind='info',showProgress=false){statusBox.className='status show';statusBox.dataset.kind=kind;statusText.textContent=message;statusIcon.innerHTML=kind==='busy'?'<span class="spinner" aria-hidden="true"></span>':kind==='success'?'✓':kind==='error'?'!':'ⓘ';progress.hidden=!showProgress;if(showProgress&&Number.isFinite(progress.value)===false)progress.value=0;}
+function clearStatus(){statusBox.className='status';progress.hidden=true;progress.value=0;}
+function chooseFile(file){if(!file)return;if(!(/\.mp4$/i.test(file.name)||file.type==='video/mp4')){showStatus('MP4形式の動画を選んでください。','error');return;}selectedFile=file;fileName.textContent=file.name;fileSize.textContent=`${fmtBytes(file.size)} · MP4動画`;fileInfo.classList.add('show');convertBtn.disabled=false;result.classList.remove('show');clearStatus();if(outputUrl){URL.revokeObjectURL(outputUrl);outputUrl=null;} }
+function clearFile(){selectedFile=null;fileInput.value='';fileInfo.classList.remove('show');convertBtn.disabled=true;result.classList.remove('show');clearStatus();if(outputUrl){URL.revokeObjectURL(outputUrl);outputUrl=null;}}
+pickBtn.addEventListener('click',()=>fileInput.click());dropzone.addEventListener('click',e=>{if(e.target.closest('button'))return;fileInput.click();});dropzone.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fileInput.click();}});fileInput.addEventListener('change',()=>chooseFile(fileInput.files[0]));removeBtn.addEventListener('click',clearFile);
+for(const evt of ['dragenter','dragover'])dropzone.addEventListener(evt,e=>{e.preventDefault();dropzone.classList.add('drag');});for(const evt of ['dragleave','drop'])dropzone.addEventListener(evt,e=>{e.preventDefault();dropzone.classList.remove('drag');});dropzone.addEventListener('drop',e=>chooseFile(e.dataTransfer.files[0]));
+function safeBaseName(name){return name.replace(/\.[^.]+$/,'').replace(/[\\/:*?"<>|]/g,'_').trim()||'converted';}
+async function loadEngine(){if(engineLoaded)return;showStatus('変換エンジンを読み込んでいます。初回は30MB前後の読み込みが必要です…','busy');convertBtn.disabled=true;const [{FFmpeg},{toBlobURL}] = await Promise.all([import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js'),import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/esm/index.js')]);ffmpeg=new FFmpeg();ffmpeg.on('log',({message})=>{const m=message.match(/time=(\d+):(\d+):(\d+(?:\.\d+)?)/);if(m&&selectedFile){/* Duration progress is approximate; keep status text simple. */}});ffmpeg.on('progress',({progress:p})=>{if(!progress.hidden&&Number.isFinite(p))progress.value=Math.max(0,Math.min(99,Math.round(p*100)));});const base='https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd';await ffmpeg.load({coreURL:await toBlobURL(`${base}/ffmpeg-core.js`,'text/javascript'),wasmURL:await toBlobURL(`${base}/ffmpeg-core.wasm`,'application/wasm')});engineLoaded=true;}
+convertBtn.addEventListener('click',async()=>{if(!selectedFile||busy)return;busy=true;convertBtn.disabled=true;result.classList.remove('show');if(outputUrl){URL.revokeObjectURL(outputUrl);outputUrl=null;}progress.value=0;progress.hidden=false;try{await loadEngine();if(!selectedFile)throw new Error('動画ファイルが選択されていません。');showStatus('動画を読み取り、MP3に変換しています…','busy',true);const inputName='fozowo-input.mp4',outName='fozowo-output.mp3';await ffmpeg.writeFile(inputName,new Uint8Array(await selectedFile.arrayBuffer()));const bitrate=$('bitrate').value;const code=await ffmpeg.exec(['-y','-i',inputName,'-vn','-map','0:a:0','-codec:a','libmp3lame','-b:a',`${bitrate}k`,outName]);if(code!==0)throw new Error('変換できませんでした。音声を含むMP4ファイルか確認してください。');const data=await ffmpeg.readFile(outName);const blob=new Blob([data],{type:'audio/mpeg'});outputUrl=URL.createObjectURL(blob);const name=safeBaseName(selectedFile.name)+'.mp3';downloadBtn.href=outputUrl;downloadBtn.download=name;resultName.textContent=`${name} · ${fmtBytes(blob.size)} · ${bitrate} kbps`;result.classList.add('show');progress.value=100;showStatus('変換が完了しました。下のボタンから保存できます。','success',true);progress.value=100;try{await ffmpeg.deleteFile(inputName);await ffmpeg.deleteFile(outName);}catch{} }catch(err){console.error(err);showStatus(err?.message?.includes('audio')||err?.message?.includes('Stream map')?'音声を取り出せませんでした。動画に音声が含まれているか確認してください。':'変換に失敗しました。通信状態や動画ファイルを確認し、もう一度お試しください。','error');}finally{busy=false;convertBtn.disabled=!selectedFile;}}
+);
+window.addEventListener('beforeunload',()=>{if(outputUrl)URL.revokeObjectURL(outputUrl);});
+</script>
+</body>
+</html>
