@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#ffffff">
+<title>掛け算ひっ算 Lite</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;color:#171923;background:#fff}
+main{width:min(620px,100% - 24px);margin:0 auto;padding:18px 0 28px}
+
+.header-nav{margin-bottom:12px}
+.back-link{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:#4f46e5;text-decoration:none;padding:6px 12px;background:#f3f4f6;border-radius:6px;transition:background 0.2s}
+.back-link:hover{background:#e5e7eb}
+
+h1{font-size:22px;margin:0 0 14px}
+.inputs{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:8px}
+.times-sign{font-size:20px;font-weight:700;color:#626779;padding-bottom:10px;text-align:center}
+label{display:block;font-size:12px;color:#626779;margin-bottom:4px}
+input{width:100%;min-width:0;padding:11px 10px;border:1px solid #d8dbe4;border-radius:8px;font:700 18px system-ui;color:#171923;background:#fff}
+button{font:inherit;font-weight:700;border:0;border-radius:8px;min-height:42px;padding:9px 14px;background:#4f46e5;color:#fff;width:100%;margin-top:9px;cursor:pointer}
+button:hover{background:#4338ca}
+#message{font-size:13px;color:#b42336;margin:8px 0 0}
+.paper-wrap{border:1px solid #e7e2d8;border-radius:12px;background:#fffefa;margin-top:15px;padding:20px 12px;overflow-x:auto}
+.paper{display:flex;flex-direction:column;align-items:center;width:max-content;margin:0 auto;--cell:34px;--op:30px;--digits:4}
+.number-row{display:grid;grid-template-columns:var(--op) repeat(var(--digits),var(--cell));min-height:43px;text-align:center;align-items:center;font-size:23px;font-weight:700;font-variant-numeric:tabular-nums}
+.op{color:#4f46e5;font-size:23px}
+.digit{width:var(--cell);text-align:center}
+.rule{height:0;border-top:2px solid #343847;width:calc(var(--digits)*var(--cell));margin-left:var(--op);margin-top:1px;margin-bottom:3px}
+.answer{color:#087f50}
+.foot{font-size:11px;color:#74798a;text-align:center;margin-top:12px}
+
+@media(max-width:420px){
+  .paper{--cell:29px;--op:26px}
+  .number-row{min-height:38px;font-size:21px}
+  .paper-wrap{padding:16px 8px}
+}
+</style>
+</head>
+<body>
+<main>
+<nav class="header-nav">
+  <a href="https://tool.fozowo.com/lite/" class="back-link">‹ ツール一覧に戻る</a>
+</nav>
+<h1>掛け算ひっ算</h1>
+<form id="form">
+<div class="inputs">
+  <div><label for="a">1つ目の数字</label><input id="a" inputmode="numeric" autocomplete="off" maxlength="30" value="123" aria-label="1つ目の数字"></div>
+  <div class="times-sign">×</div>
+  <div><label for="b">2つ目の数字</label><input id="b" inputmode="numeric" autocomplete="off" maxlength="30" value="45" aria-label="2つ目の数字"></div>
+</div>
+<button type="submit">筆算を表示</button>
+<p id="message" role="status"></p>
+</form>
+<section class="paper-wrap" aria-label="掛け算の筆算"><div id="paper" class="paper" aria-live="polite"></div></section>
+<div class="foot">軽量版 · 入力した数字はこの端末内で計算します</div>
+</main>
+<script>
+(()=>{'use strict';
+const form=document.getElementById('form'),a=document.getElementById('a'),b=document.getElementById('b'),paper=document.getElementById('paper'),message=document.getElementById('message');
+function node(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;}
+function addRow(value,sign='',shift=0,width=1,answer=false){const r=node('div','number-row');r.style.setProperty('--digits',width);r.append(node('span','op',sign));const s=String(value),blank=Math.max(0,width-s.length-shift);for(let i=0;i<blank;i++)r.append(node('span','digit',''));for(const ch of s)r.append(node('span','digit',ch));for(let i=0;i<shift;i++)r.append(node('span','digit',''));if(answer)r.classList.add('answer');paper.append(r);}
+function line(width){const r=node('div','rule');r.style.setProperty('--digits',width);paper.append(r);}
+function calculate(event){if(event)event.preventDefault();message.textContent='';const x=a.value.trim(),y=b.value.trim();if(!/^\d{1,30}$/.test(x)||!/^\d{1,30}$/.test(y)){message.textContent='0以上の整数を入力してください（各30桁まで）。';return;}const top=x.replace(/^0+(?=\d)/,''),bottom=y.replace(/^0+(?=\d)/,'');a.value=top;b.value=bottom;const A=BigInt(top),B=BigInt(bottom),answer=(A*B).toString(),digits=[...bottom].reverse().map((ch,i)=>({value:(A*BigInt(ch)).toString(),shift:i}));const width=Math.max(top.length,bottom.length,answer.length,...digits.map(d=>d.value.length+d.shift));paper.replaceChildren();paper.style.setProperty('--digits',width);addRow(top,'',0,width);addRow(bottom,'×',0,width);line(width);if(digits.length===1){addRow(answer,'',0,width,true);}else{for(const d of digits)addRow(d.value,'',d.shift,width);line(width);addRow(answer,'',0,width,true);}}
+form.addEventListener('submit',calculate);calculate();
+})();
+</script>
+</body>
+</html>
