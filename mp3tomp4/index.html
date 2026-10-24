@@ -62,7 +62,7 @@
     <aside class="right-panel">
       <section class="privacy">
         <div class="privacy-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="m9 15 2 2 4-4"/></svg> ファイルは端末内で処理</div>
-        <p>選んだ動画を変換サーバーへアップロードしません。変換処理はブラウザー内で行います。変換エンジンの読み込みにはインターネット接続が必要です。</p>
+        <p>選んだ動画を変換サーバーへアップロードしません。変換処理はブラウザー内で行います。初回はインターネット経由で変換エンジンを読み込みます。動画ファイル自体はアップロードしません。</p>
       </section>
       <section class="panel howto">
         <h2>使い方はかんたん3ステップ</h2>
@@ -92,8 +92,32 @@ function clearFile(){selectedFile=null;fileInput.value='';fileInfo.classList.rem
 pickBtn.addEventListener('click',()=>fileInput.click());dropzone.addEventListener('click',e=>{if(e.target.closest('button'))return;fileInput.click();});dropzone.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fileInput.click();}});fileInput.addEventListener('change',()=>chooseFile(fileInput.files[0]));removeBtn.addEventListener('click',clearFile);
 for(const evt of ['dragenter','dragover'])dropzone.addEventListener(evt,e=>{e.preventDefault();dropzone.classList.add('drag');});for(const evt of ['dragleave','drop'])dropzone.addEventListener(evt,e=>{e.preventDefault();dropzone.classList.remove('drag');});dropzone.addEventListener('drop',e=>chooseFile(e.dataTransfer.files[0]));
 function safeBaseName(name){return name.replace(/\.[^.]+$/,'').replace(/[\\/:*?"<>|]/g,'_').trim()||'converted';}
-async function loadEngine(){if(engineLoaded)return;showStatus('変換エンジンを読み込んでいます。初回は30MB前後の読み込みが必要です…','busy');convertBtn.disabled=true;const [{FFmpeg},{toBlobURL}] = await Promise.all([import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js'),import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/esm/index.js')]);ffmpeg=new FFmpeg();ffmpeg.on('log',({message})=>{const m=message.match(/time=(\d+):(\d+):(\d+(?:\.\d+)?)/);if(m&&selectedFile){/* Duration progress is approximate; keep status text simple. */}});ffmpeg.on('progress',({progress:p})=>{if(!progress.hidden&&Number.isFinite(p))progress.value=Math.max(0,Math.min(99,Math.round(p*100)));});const base='https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd';await ffmpeg.load({coreURL:await toBlobURL(`${base}/ffmpeg-core.js`,'text/javascript'),wasmURL:await toBlobURL(`${base}/ffmpeg-core.wasm`,'application/wasm')});engineLoaded=true;}
-convertBtn.addEventListener('click',async()=>{if(!selectedFile||busy)return;busy=true;convertBtn.disabled=true;result.classList.remove('show');if(outputUrl){URL.revokeObjectURL(outputUrl);outputUrl=null;}progress.value=0;progress.hidden=false;try{await loadEngine();if(!selectedFile)throw new Error('動画ファイルが選択されていません。');showStatus('動画を読み取り、MP3に変換しています…','busy',true);const inputName='fozowo-input.mp4',outName='fozowo-output.mp3';await ffmpeg.writeFile(inputName,new Uint8Array(await selectedFile.arrayBuffer()));const bitrate=$('bitrate').value;const code=await ffmpeg.exec(['-y','-i',inputName,'-vn','-map','0:a:0','-codec:a','libmp3lame','-b:a',`${bitrate}k`,outName]);if(code!==0)throw new Error('変換できませんでした。音声を含むMP4ファイルか確認してください。');const data=await ffmpeg.readFile(outName);const blob=new Blob([data],{type:'audio/mpeg'});outputUrl=URL.createObjectURL(blob);const name=safeBaseName(selectedFile.name)+'.mp3';downloadBtn.href=outputUrl;downloadBtn.download=name;resultName.textContent=`${name} · ${fmtBytes(blob.size)} · ${bitrate} kbps`;result.classList.add('show');progress.value=100;showStatus('変換が完了しました。下のボタンから保存できます。','success',true);progress.value=100;try{await ffmpeg.deleteFile(inputName);await ffmpeg.deleteFile(outName);}catch{} }catch(err){console.error(err);showStatus(err?.message?.includes('audio')||err?.message?.includes('Stream map')?'音声を取り出せませんでした。動画に音声が含まれているか確認してください。':'変換に失敗しました。通信状態や動画ファイルを確認し、もう一度お試しください。','error');}finally{busy=false;convertBtn.disabled=!selectedFile;}}
+async function loadEngine(){
+  if(engineLoaded)return;
+  showStatus('変換エンジンを読み込んでいます。初回は30MB前後の読み込みが必要です…','busy');
+  convertBtn.disabled=true;
+  const ffmpegPkg='https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm';
+  const [{FFmpeg},{toBlobURL}]=await Promise.all([
+    import(`${ffmpegPkg}/index.js`),
+    import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/esm/index.js')
+  ]);
+  // CDN上のworker.jsをそのままWorkerとして起動するとSame-Origin制限により失敗するため、
+  // workerをBlob化し、相対importをCDNの絶対URLに書き換えてから起動します。
+  const workerResponse=await fetch(`${ffmpegPkg}/worker.js`);
+  if(!workerResponse.ok)throw new Error('変換用Workerを読み込めませんでした。通信状態を確認してください。');
+  let workerCode=await workerResponse.text();
+  workerCode=workerCode
+    .replace(/(["'])\.\/const\.js\1/g, JSON.stringify(`${ffmpegPkg}/const.js`))
+    .replace(/(["'])\.\/errors\.js\1/g, JSON.stringify(`${ffmpegPkg}/errors.js`));
+  const classWorkerURL=URL.createObjectURL(new Blob([workerCode],{type:'text/javascript'}));
+  ffmpeg=new FFmpeg();
+  ffmpeg.on('log',({message})=>{const m=message.match(/time=(\d+):(\d+):(\d+(?:\.\d+)?)/);if(m&&selectedFile){/* Duration progress is approximate; keep status text simple. */}});
+  ffmpeg.on('progress',({progress:p})=>{if(!progress.hidden&&Number.isFinite(p))progress.value=Math.max(0,Math.min(99,Math.round(p*100)));});
+  const base='https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd';
+  await ffmpeg.load({classWorkerURL,coreURL:await toBlobURL(`${base}/ffmpeg-core.js`,'text/javascript'),wasmURL:await toBlobURL(`${base}/ffmpeg-core.wasm`,'application/wasm')});
+  engineLoaded=true;
+}
+convertBtn.addEventListener('click',async()=>{if(!selectedFile||busy)return;busy=true;convertBtn.disabled=true;result.classList.remove('show');if(outputUrl){URL.revokeObjectURL(outputUrl);outputUrl=null;}progress.value=0;progress.hidden=false;try{await loadEngine();if(!selectedFile)throw new Error('動画ファイルが選択されていません。');showStatus('動画を読み取り、MP3に変換しています…','busy',true);const inputName='fozowo-input.mp4',outName='fozowo-output.mp3';await ffmpeg.writeFile(inputName,new Uint8Array(await selectedFile.arrayBuffer()));const bitrate=$('bitrate').value;const code=await ffmpeg.exec(['-y','-i',inputName,'-vn','-map','0:a:0','-codec:a','libmp3lame','-b:a',`${bitrate}k`,outName]);if(code!==0)throw new Error('変換できませんでした。音声を含むMP4ファイルか確認してください。');const data=await ffmpeg.readFile(outName);const blob=new Blob([data],{type:'audio/mpeg'});outputUrl=URL.createObjectURL(blob);const name=safeBaseName(selectedFile.name)+'.mp3';downloadBtn.href=outputUrl;downloadBtn.download=name;resultName.textContent=`${name} · ${fmtBytes(blob.size)} · ${bitrate} kbps`;result.classList.add('show');progress.value=100;showStatus('変換が完了しました。下のボタンから保存できます。','success',true);progress.value=100;try{await ffmpeg.deleteFile(inputName);await ffmpeg.deleteFile(outName);}catch{} }catch(err){console.error(err);const message=String(err?.message||err);showStatus(message.includes('audio')||message.includes('Stream map')?'音声を取り出せませんでした。動画に音声が含まれているか確認してください。':message.includes('Worker')||message.includes('worker')||message.includes('SecurityError')?'変換エンジンを起動できませんでした。最新版のページに置き換えて再読み込みしてください。':'変換に失敗しました。通信状態や動画ファイルを確認し、もう一度お試しください。','error');}finally{busy=false;convertBtn.disabled=!selectedFile;}}
 );
 window.addEventListener('beforeunload',()=>{if(outputUrl)URL.revokeObjectURL(outputUrl);});
 </script>
