@@ -113,7 +113,8 @@ async function loadEngine(){
   ffmpeg=new FFmpeg();
   ffmpeg.on('log',({message})=>{const m=message.match(/time=(\d+):(\d+):(\d+(?:\.\d+)?)/);if(m&&selectedFile){/* Duration progress is approximate; keep status text simple. */}});
   ffmpeg.on('progress',({progress:p})=>{if(!progress.hidden&&Number.isFinite(p))progress.value=Math.max(0,Math.min(99,Math.round(p*100)));});
-  const base='https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd';
+  // The worker is a module worker, so use the ESM core (UMD has no default export here).
+  const base='https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm';
   await ffmpeg.load({classWorkerURL,coreURL:await toBlobURL(`${base}/ffmpeg-core.js`,'text/javascript'),wasmURL:await toBlobURL(`${base}/ffmpeg-core.wasm`,'application/wasm')});
   engineLoaded=true;
 }
