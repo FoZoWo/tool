@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#e8e4d1">
+<title>FoZoWo LP Player — Brown Edition</title>
+<style>
+:root{color-scheme:light;--paper:#e8e5d2;--ink:#34251b;--brown:#6c432b;--brown-dark:#3f2618;--brass:#c79c61;--rpm-time:3.6s;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;min-height:100%;background:var(--paper);color:var(--ink)}
+body{min-height:100vh;min-height:100dvh;overflow:hidden}
+button,input{font:inherit}button{touch-action:manipulation}
+.player{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh;overflow:hidden;padding:8px 12px 12px;background:radial-gradient(ellipse at 44% 36%,#f1eedc 0,#e8e5d2 55%,#d9d3bb 100%);isolation:isolate}
+.player:before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.17;background:repeating-linear-gradient(0deg,#776b4c0b 0 1px,transparent 1px 3px),repeating-linear-gradient(90deg,#776b4c08 0 1px,transparent 1px 4px);z-index:0}
+.scene-wrap{position:relative;z-index:1;display:grid;place-items:center;flex:1;min-height:0;width:100%;}
+#turntableArt{display:block;width:min(100vw, calc((100dvh - 116px) * 1.034), 980px);height:auto;max-height:calc(100dvh - 106px);overflow:visible;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.record-surface{stroke:#23150d;stroke-width:2;fill:url(#vinylBrown)}
+.groove{fill:none;stroke:#1d110b;stroke-width:1.15;opacity:.86}
+.groove-glint{fill:none;stroke:#8e6544;stroke-width:.7;opacity:.48}
+.record-highlight{pointer-events:none;opacity:.7}
+#tonearm{cursor:grab;touch-action:none;pointer-events:all}
+#tonearm.dragging{cursor:grabbing}
+.arm-hit{fill:none;stroke:transparent;stroke-width:42;stroke-linecap:round;stroke-linejoin:round;pointer-events:stroke;cursor:grab;touch-action:none}
+.arm-outline{fill:none;stroke:#5a4939;stroke-width:5.2;stroke-linecap:round;stroke-linejoin:round}
+.arm-light{fill:none;stroke:#e8dcc4;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;opacity:.94}
+.cartridge{fill:#9c8060;stroke:#4e3927;stroke-width:2}
+.stylus{stroke:#332319;stroke-width:2.4;stroke-linecap:round}
+.controls{position:relative;z-index:2;flex:0 0 auto;width:min(100%,620px);display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;padding:10px 12px 11px;border:2px solid #68462d;border-radius:12px;background:linear-gradient(145deg,#b18b61 0%,#8b6443 48%,#6a472f 100%);box-shadow:inset 0 1px 0 #f4e2c080,inset 0 -3px 7px #43281650,0 4px 9px #67432622}
+.controls:before,.controls:after{content:"";position:absolute;top:5px;width:5px;height:5px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#e8d6ad,#4d321e 80%);box-shadow:0 1px 1px #37231380}.controls:before{left:6px}.controls:after{right:6px}
+.btn{min-height:39px;min-width:76px;padding:0 14px;border:1px solid #412819;border-radius:5px;color:#f7ead5;background:linear-gradient(#8d6544,#634128 54%,#4e301e);box-shadow:inset 0 1px 0 #f5dbb63a,0 2px 2px #3d281b70;text-shadow:0 1px 1px #29180d;cursor:pointer;font-size:11px;font-weight:850;letter-spacing:.07em}
+.btn:active{transform:translateY(1px);filter:brightness(1.12)}
+.btn[aria-pressed="true"]{color:#402512;background:linear-gradient(#e2c18b,#c49a60 58%,#9a7047);border-color:#5b3b22;text-shadow:none;box-shadow:inset 0 1px 3px #fff5cf,0 0 0 1px #d6ad76}
+.btn.play{min-width:92px;background:linear-gradient(#e7d0a1,#c29a63 60%,#9c7044);color:#432817;border-color:#593a21;text-shadow:none}
+.btn.stop{min-width:72px}
+.btn.load{min-width:110px}
+.track{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#f0dfc5;font-size:10px}
+.file-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.status{position:relative;z-index:1;flex:0 0 auto;min-height:16px;margin-top:5px;color:#796148;font:10px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;text-align:center}
+@media(max-width:600px){
+ body{overflow:auto}.player{min-height:100dvh;padding:8px 6px max(8px,env(safe-area-inset-bottom));justify-content:center;gap:4px}
+ .scene-wrap{flex:0 1 auto;width:100%;min-height:0}
+ #turntableArt{width:min(100%, calc((100dvh - 150px) * 1.034));max-height:calc(100dvh - 145px)}
+ .controls{gap:6px;padding:9px 8px 10px;width:min(100%,540px);border-radius:10px}
+ .btn{min-height:42px;min-width:68px;padding:0 10px;font-size:10px}.btn.play{min-width:80px}.btn.load{min-width:88px}.track{max-width:100%;flex-basis:100%;text-align:center;order:2}
+ .status{margin-top:4px;font-size:9px}
+}
+@media(max-height:510px) and (orientation:landscape){.player{padding:4px;gap:2px}#turntableArt{width:min(100vw,calc((100dvh - 70px)*1.034));max-height:calc(100dvh - 66px)}.controls{padding:5px 8px;gap:5px}.btn{min-height:32px}.status{margin-top:0;min-height:12px}}
+@media(prefers-reduced-motion:reduce){.status{transition:none}}
+
+/* FoZoWo LP brand mark: fixed in the upper-left, crisp at any zoom */
+.brand-logo{position:absolute;z-index:6;top:max(10px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));display:block;width:clamp(100px,14vw,185px);height:auto;aspect-ratio:2000/620;object-fit:contain;pointer-events:none;user-select:none;-webkit-user-drag:none;filter:drop-shadow(0 2px 4px #30201435)}
+@media(max-width:600px){.brand-logo{width:clamp(92px,26vw,128px);top:max(8px,env(safe-area-inset-top));left:max(8px,env(safe-area-inset-left))}}
+
+</style>
+</head>
+<body>
+<main class="player" aria-label="FoZoWo 茶色のLPプレーヤー">
+  <img class="brand-logo" src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAwIiBoZWlnaHQ9IjYyMCIgdmlld0JveD0iMCAwIDIwMDAgNjIwIiByb2xlPSJpbWciIGFyaWEtbGFiZWxsZWRieT0idGl0bGUgZGVzYyI+CiAgPHRpdGxlIGlkPSJ0aXRsZSI+Rm9ab1dvIExQPC90aXRsZT4KICA8ZGVzYyBpZD0iZGVzYyI+Rm9ab1dvIGVtYmxlbSBhbmQgYSBicm93biB2aW55bCByZWNvcmQgd2l0aCBhIHRvbmVhcm0gYW5kIExQIGxldHRlcmluZywgZHJhd24gaW4gc2NhbGFibGUgdmVjdG9yIGdyYXBoaWNzLjwvZGVzYz4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0idmlueWwiIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzYwM0QyQiIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjMyJSIgc3RvcC1jb2xvcj0iIzNGMjYxRCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjYyJSIgc3RvcC1jb2xvcj0iIzJDMUExNCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjgyJSIgc3RvcC1jb2xvcj0iIzRBMkIxRCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiMyMTE1MTAiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8cmFkaWFsR3JhZGllbnQgaWQ9ImxhYmVsIiBjeD0iMzIlIiBjeT0iMjQlIiByPSI4MCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjRTlCMDc4Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iNDUlIiBzdG9wLWNvbG9yPSIjQzg4MzRDIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzg1NDkyNyIvPgogICAgPC9yYWRpYWxHcmFkaWVudD4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ibWV0YWwiIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI0Y1RTdDOCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjQyJSIgc3RvcC1jb2xvcj0iI0I5OTg2RCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjYyJSIgc3RvcC1jb2xvcj0iI0YzRTVDNyIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiM3MTUyMzYiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImxwVGV4dCIgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjEiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjNEE0RDU2Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iIzI1MjgzMSIvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICAgIDxmaWx0ZXIgaWQ9InNoYWRvdyIgeD0iLTMwJSIgeT0iLTMwJSIgd2lkdGg9IjE2MCUiIGhlaWdodD0iMTYwJSI+CiAgICAgIDxmZUdhdXNzaWFuQmx1ciBpbj0iU291cmNlQWxwaGEiIHN0ZERldmlhdGlvbj0iOCIgcmVzdWx0PSJibHVyIi8+CiAgICAgIDxmZU9mZnNldCBkeT0iNyIgcmVzdWx0PSJvZmZzZXQiLz4KICAgICAgPGZlQ29tcG9uZW50VHJhbnNmZXI+PGZlRnVuY0EgdHlwZT0ibGluZWFyIiBzbG9wZT0iMC4yNCIvPjwvZmVDb21wb25lbnRUcmFuc2Zlcj4KICAgICAgPGZlTWVyZ2U+PGZlTWVyZ2VOb2RlLz48ZmVNZXJnZU5vZGUgaW49IlNvdXJjZUdyYXBoaWMiLz48L2ZlTWVyZ2U+CiAgICA8L2ZpbHRlcj4KICA8L2RlZnM+CiAgPCEtLSBPcmlnaW5hbCBGb1pvV28gZW1ibGVtIHRyYWNlZCBpbnRvIGVkaXRhYmxlIHZlY3RvciBwYXRocyAtLT4KICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMCAzNSkgc2NhbGUoMC41MSkiIGZpbGwtcnVsZT0iZXZlbm9kZCI+CiAgICA8cGF0aCBkPSJNIDEwNzAgNDcwIEwgMTA1OSA0NTQgTCAxMDQ0IDQ0NSBMIDEwMjUgNDQ0IEwgMTAxMyA0NDkgTCAxMDIwIDUwOSBMIDEwMjAgNTY3IEwgMTAxNyA1OTcgTCAxMDEwIDYzNyBMIDk5OCA2ODIgTCA5ODIgNzI1IEwgOTYwIDc3MCBMIDkzMSA4MTYgTCA5MTEgODQyIEwgODg4IDg2OCBMIDg1OSA4OTYgTCA4MjQgOTI1IEwgODAxIDk0MSBMIDc2OSA5NjAgTCA3NDIgOTc0IEwgNzAyIDk5MSBMIDY2MSAxMDA0IEwgNjIyIDEwMTMgTCA1NjMgMTAyMCBMIDUxOSAxMDIwIEwgNDYxIDEwMTQgTCA0MTMgMTAwMyBMIDM4OSA5OTYgTCAzNDQgOTc4IEwgMzA4IDk2MCBMIDI3OCA5NDIgTCAyNDcgOTIwIEwgMjE3IDg5NSBMIDE4MCA4NTggTCAxNjMgODM3IEwgMTU3IDgzNiBMIDE1MyA4MzggTCAxMzEgODQxIEwgMTEwIDg0MCBMIDk4IDgzNiBMIDkzIDgzNyBMIDExMyA4NjUgTCAxNDQgOTAyIEwgMTgxIDkzOCBMIDIyMyA5NzIgTCAyNjIgOTk4IEwgMzExIDEwMjQgTCAzNDEgMTAzNyBMIDM4NyAxMDUzIEwgNDIxIDEwNjIgTCA0ODEgMTA3MiBMIDUyOCAxMDc1IEwgNTc0IDEwNzQgTCA2MzIgMTA2NyBMIDY4OCAxMDU0IEwgNzM3IDEwMzcgTCA3NzUgMTAyMCBMIDgyMCA5OTUgTCA4NTggOTY5IEwgODk0IDk0MCBMIDkzNyA4OTggTCA5NTkgODcyIEwgOTc4IDg0NyBMIDEwMDIgODEwIEwgMTAyNCA3NjkgTCAxMDQxIDczMCBMIDEwNTMgNjk2IEwgMTA2NiA2NDQgTCAxMDc2IDU3NiBMIDEwNzYgNTA3IEwgMTA3NCA0ODcgWiIgZmlsbD0iIzNCM0Y0OSIgc3Ryb2tlPSIjRURFMkNDIiBzdHJva2Utd2lkdGg9IjMuNSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CjxwYXRoIGQ9Ik0gMzMyIDQwNCBMIDMyMyA0MTQgTCAzMTggNDIzIEwgMzE1IDQzMyBMIDMxNSA0NDEgTCAzMTcgNDQzIEwgNTUzIDQ0NCBMIDM1MyA2NjEgTCAzMTggNzAyIEwgMzA4IDcyMiBMIDMwNyA3NDAgTCAzMTEgNzUyIEwgMzIwIDc2MiBMIDMzMCA3NjcgTCAzNDMgNzY5IEwgMzYyIDc2OCBMIDM5NSA3NjMgTCA0MjcgNzYzIEwgNDYwIDc2OCBMIDQ4NyA3NzYgTCA1MDQgNzgzIEwgNTM0IDc5OCBMIDU3OSA4MjQgTCA2MTkgODQzIEwgNjQ2IDg1MiBMIDY3NyA4NTcgTCA3MTMgODU2IEwgNzQ5IDg0NyBMIDc3MSA4MzcgTCA3OTIgODI0IEwgODE4IDgwMCBMIDgxOSA3OTYgTCA4MDUgNzg3IEwgNzkzIDc3NSBMIDc4MyA3NjAgTCA3NzUgNzY5IEwgNzYwIDc4MSBMIDczMiA3OTYgTCA3MDUgODAzIEwgNjczIDgwMyBMIDY1NyA3OTkgTCA2MzAgNzg5IEwgNTI5IDczNSBMIDQ5MiA3MjEgTCA0NDMgNzExIEwgMzk0IDcxMCBMIDM4OSA3MTIgTCAzODcgNzA4IEwgMzk0IDY5OSBMIDYwOSA0NjQgTCA2MjAgNDQ5IEwgNjI1IDQzOSBMIDYyOCA0MjQgTCA2MjcgNDE1IEwgNjIxIDQwMiBMIDYxNCAzOTYgTCA2MDIgMzkxIEwgNTg0IDM4OSBMIDM2MyAzOTAgTCAzNDggMzk0IFoiIGZpbGw9IiMzQjNGNDkiIHN0cm9rZT0iI0VERTJDQyIgc3Ryb2tlLXdpZHRoPSIzLjUiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8cGF0aCBkPSJNIDEwMDMgMjY3IEwgOTc1IDIyNCBMIDk0NCAxODUgTCA4OTkgMTM5IEwgODczIDExNyBMIDgyOSA4NSBMIDc4MCA1NyBMIDczMyAzNiBMIDY3OCAxOCBMIDYyOCA3IEwgNTg5IDIgTCA0OTMgMiBMIDQ2OSA0IEwgNDI4IDExIEwgMzc4IDI0IEwgMzI3IDQzIEwgMjg2IDYzIEwgMjM0IDk1IEwgMTk3IDEyMyBMIDE3NCAxNDMgTCAxMjQgMTk2IEwgOTEgMjQwIEwgNjIgMjg5IEwgNDIgMzMxIEwgMjUgMzc3IEwgMTYgNDEwIEwgNSA0NjkgTCAxIDUyMiBMIDIgNTgwIEwgOCA2MjYgTCAxOCA2NzMgTCAzMiA3MTggTCA1MiA3NjUgTCA2MCA3NzggTCA3MiA3OTEgTCA4OCA4MDIgTCAxMDcgODA5IEwgMTE5IDgxMSBMIDE1MCA4MDkgTCAxNjYgODA0IEwgMTg3IDc5MiBMIDIwNiA3NzQgTCAyMTMgNzY1IEwgMjI4IDczNiBMIDIzNCA3MTYgTCAyMzkgNjgzIEwgMjQwIDYyNyBMIDI0NyA2MDIgTCAyNTcgNTg3IEwgMjczIDU3NCBMIDI5MyA1NjYgTCAzMTAgNTY0IEwgMzY4IDU2MyBMIDQxNCA1MTIgTCAyOTggNTEyIEwgMjY4IDUxOSBMIDI1MiA1MjYgTCAyNDEgNTM0IEwgMjM5IDUzMiBMIDIzOSA0MzkgTCAyNDMgNDA1IEwgMjQ4IDM4NyBMIDI1NSAzNzIgTCAyNjIgMzYyIEwgMjc1IDM0OSBMIDI5NCAzMzggTCAzMDYgMzM0IEwgMzI3IDMzMSBMIDQ4OCAzMzEgTCA1MjcgMzI1IEwgNTU4IDMxMiBMIDU3NSAzMDAgTCA1OTYgMjc3IEwgNjA5IDI1MSBMIDYxNCAyMzAgTCA2MTQgMjE4IEwgNTYzIDIxNyBMIDU2MCAyMTkgTCA1NTYgMjM4IEwgNTQ4IDI1MSBMIDUzMyAyNjUgTCA1MTIgMjc0IEwgNDkxIDI3OCBMIDMyNiAyNzggTCAzMDQgMjgwIEwgMjg2IDI4NCBMIDI2MiAyOTMgTCAyNDUgMzAzIEwgMjI3IDMxOCBMIDIxMyAzMzUgTCAyMDAgMzU5IEwgMTkzIDM3OSBMIDE4NyA0MDggTCAxODUgNDI5IEwgMTg1IDY2MyBMIDE4MyA2OTEgTCAxNzggNzE1IEwgMTY2IDczOCBMIDE1MyA3NTAgTCAxMzcgNzU2IEwgMTI0IDc1NiBMIDExNyA3NTQgTCAxMTIgNzUxIEwgMTAxIDczOCBMIDgzIDY5NCBMIDY4IDY0MCBMIDYwIDU5NiBMIDU3IDU2NyBMIDU4IDQ5OSBMIDY0IDQ1MyBMIDc5IDM5MyBMIDk4IDM0MyBMIDExNCAzMTEgTCAxMzkgMjcwIEwgMTY1IDIzNSBMIDE5NCAyMDIgTCAyMzMgMTY2IEwgMjcwIDEzOCBMIDMwOSAxMTQgTCAzNDUgOTYgTCAzOTIgNzggTCA0MjcgNjggTCA0NzcgNTkgTCA1MTQgNTYgTCA1ODEgNTcgTCA2MjYgNjMgTCA2NzYgNzUgTCA3MjAgOTEgTCA3NTUgMTA3IEwgNzk4IDEzMiBMIDgzOCAxNjEgTCA4NzcgMTk2IEwgOTA0IDIyNSBMIDkzNCAyNjQgTCA5NjIgMzA5IEwgOTgyIDM1MCBMIDk4OSAzNzAgTCA5NjYgMzgzIEwgOTQxIDQwNiBMIDkzMSA0MTkgTCA5MTQgNDUxIEwgODk2IDUwNiBMIDg1NSA2NjEgTCA4NTMgNjYwIEwgODAzIDQ5NCBMIDc5NiA0ODIgTCA3ODMgNDczIEwgNzc3IDQ3MSBMIDc1OSA0NzIgTCA3NDggNDc4IEwgNzQwIDQ4NyBMIDcxNiA1NjIgTCA2OTAgNjU0IEwgNjg2IDY2MiBMIDY4NCA2NjAgTCA2ODMgNjUxIEwgNjM5IDQ4OCBMIDYzNSA0OTAgTCA2MjEgNTA4IEwgNTk3IDUzMyBMIDYwMyA1NjIgTCA2NTIgNzM3IEwgNjU2IDc0NSBMIDY2MyA3NTIgTCA2NzQgNzU3IEwgNjk0IDc1NyBMIDcwNyA3NTEgTCA3MTYgNzM5IEwgNzYxIDU4NiBMIDc3MCA1NjEgTCA4MTggNzIyIEwgODI2IDc0MyBMIDgzMyA3NTEgTCA4NDYgNzU3IEwgODY1IDc1NyBMIDg3NSA3NTMgTCA4ODQgNzQ1IEwgODkyIDcyNSBMIDk0NSA1MzQgTCA5NTIgNTA0IEwgOTYzIDQ3MiBMIDk3MSA0NTUgTCA5NzggNDQ0IEwgOTkxIDQzMCBMIDEwMTAgNDE4IEwgMTAyNiA0MTQgTCAxMDQxIDQxNCBMIDEwNDkgNDE2IEwgMTA2MSA0MjIgTCAxMDY0IDQyMSBMIDEwNTUgMzg2IEwgMTA0MiAzNDggTCAxMDIxIDMwMCBaIiBmaWxsPSIjM0IzRjQ5IiBzdHJva2U9IiNFREUyQ0MiIHN0cm9rZS13aWR0aD0iMy41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8L2c+CiAgPCEtLSBMUCByZWNvcmQgLS0+CiAgPGcgZmlsdGVyPSJ1cmwoI3NoYWRvdykiPgogICAgPGNpcmNsZSBjeD0iODcwIiBjeT0iMzEwIiByPSIyNDkiIGZpbGw9IiMxRDEyMEUiIHN0cm9rZT0iI0I1OEE1RCIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgICA8Y2lyY2xlIGN4PSI4NzAiIGN5PSIzMTAiIHI9IjI0MSIgZmlsbD0idXJsKCN2aW55bCkiIHN0cm9rZT0iIzE2MEYwQyIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgICA8Y2lyY2xlIGN4PSI4NzAiIGN5PSIzMTAiIHI9IjIyOCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOTQ2MzQxIiBzdHJva2Utb3BhY2l0eT0iLjU4IiBzdHJva2Utd2lkdGg9IjIiLz4KICAgIDxjaXJjbGUgY3g9Ijg3MCIgY3k9IjMxMCIgcj0iMjE1IiBmaWxsPSJub25lIiBzdHJva2U9IiMxMDBCMDkiIHN0cm9rZS13aWR0aD0iMiIvPgogICAgPGNpcmNsZSBjeD0iODcwIiBjeT0iMzEwIiByPSIxOTkiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhBNUIzQyIgc3Ryb2tlLW9wYWNpdHk9Ii42MiIgc3Ryb2tlLXdpZHRoPSIxLjYiLz4KICAgIDxjaXJjbGUgY3g9Ijg3MCIgY3k9IjMxMCIgcj0iMTg0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxMDBCMDkiIHN0cm9rZS13aWR0aD0iMiIvPgogICAgPGNpcmNsZSBjeD0iODcwIiBjeT0iMzEwIiByPSIxNjgiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhDNUEzQiIgc3Ryb2tlLW9wYWNpdHk9Ii41MCIgc3Ryb2tlLXdpZHRoPSIxLjYiLz4KICAgIDxjaXJjbGUgY3g9Ijg3MCIgY3k9IjMxMCIgcj0iMTUxIiBmaWxsPSJub25lIiBzdHJva2U9IiMxMDBCMDkiIHN0cm9rZS13aWR0aD0iMiIvPgogICAgPGNpcmNsZSBjeD0iODcwIiBjeT0iMzEwIiByPSIxMzYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhDNUEzQiIgc3Ryb2tlLW9wYWNpdHk9Ii40NiIgc3Ryb2tlLXdpZHRoPSIxLjUiLz4KICAgIDxjaXJjbGUgY3g9Ijg3MCIgY3k9IjMxMCIgcj0iMTIwIiBmaWxsPSJub25lIiBzdHJva2U9IiMxMDBCMDkiIHN0cm9rZS13aWR0aD0iMiIvPgogICAgPGNpcmNsZSBjeD0iODcwIiBjeT0iMzEwIiByPSIxMDQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzhDNUEzQiIgc3Ryb2tlLW9wYWNpdHk9Ii40NSIgc3Ryb2tlLXdpZHRoPSIxLjUiLz4KICAgIDxjaXJjbGUgY3g9Ijg3MCIgY3k9IjMxMCIgcj0iODgiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzEwMEIwOSIgc3Ryb2tlLXdpZHRoPSIxLjUiLz4KICAgIDxwYXRoIGQ9Ik0gNjkwIDE4MCBBIDIxNSAyMTUgMCAwIDEgODM0IDEwMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjQjU4NDVBIiBzdHJva2Utb3BhY2l0eT0iLjI2IiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogICAgPGNpcmNsZSBjeD0iODcwIiBjeT0iMzEwIiByPSI3NyIgZmlsbD0idXJsKCNsYWJlbCkiIHN0cm9rZT0iIzVBMzIxRSIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgICA8cGF0aCBkPSJNODcwIDI0OCBMOTIwIDMzNSBMODE1IDM1NCBaIiBmaWxsPSIjQjc2NzM3IiBvcGFjaXR5PSIuMzgiLz4KICAgIDxjaXJjbGUgY3g9Ijg3MCIgY3k9IjMxMCIgcj0iMTQiIGZpbGw9IiNFNEExNjgiIHN0cm9rZT0iIzdDNDkyQiIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgICA8Y2lyY2xlIGN4PSI4NzAiIGN5PSIzMTAiIHI9IjUiIGZpbGw9IiMyMTE0MEQiLz4KICA8L2c+CiAgPCEtLSBUb25lIGFybSBwaXZvdCBhbmQgYXJtOiB2ZWN0b3IgZGV0YWlsLCByZXN0aW5nIG92ZXIgdGhlIHJlY29yZCAtLT4KICA8ZyBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPgogICAgPHBhdGggZD0iTTEwOTYgMTMwIEMxMDcyIDE5MiAxMDUxIDI4MSAxMDIzIDM2MSBDMTAwOSAzOTkgOTg3IDQyNSA5NTMgNDQ1IgogICAgICAgICAgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjM0EyODFEIiBzdHJva2Utd2lkdGg9IjEzIi8+CiAgICA8cGF0aCBkPSJNMTA5NiAxMzAgQzEwNzIgMTkyIDEwNTEgMjgxIDEwMjMgMzYxIEMxMDA5IDM5OSA5ODcgNDI1IDk1MyA0NDUiCiAgICAgICAgICBmaWxsPSJub25lIiBzdHJva2U9InVybCgjbWV0YWwpIiBzdHJva2Utd2lkdGg9IjciLz4KICAgIDxjaXJjbGUgY3g9IjEwOTYiIGN5PSIxMzAiIHI9IjI5IiBmaWxsPSJ1cmwoI21ldGFsKSIgc3Ryb2tlPSIjNjI0NzJGIiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxjaXJjbGUgY3g9IjEwOTYiIGN5PSIxMzAiIHI9IjE3IiBmaWxsPSIjM0EyQjIwIiBzdHJva2U9IiNEOEJEOTIiIHN0cm9rZS13aWR0aD0iMyIvPgogICAgPGNpcmNsZSBjeD0iMTA5NiIgY3k9IjEzMCIgcj0iNiIgZmlsbD0iI0U3Q0RBNyIvPgogICAgPHBhdGggZD0iTTEwODYgMTAyIEwxMTIzIDQ1IEwxMTQyIDU2IEwxMTA1IDExNCBaIiBmaWxsPSJ1cmwoI21ldGFsKSIgc3Ryb2tlPSIjNjI0NzJGIiBzdHJva2Utd2lkdGg9IjQiLz4KICAgIDxwYXRoIGQ9Ik05NTEgNDQxIEw5NzcgNDYwIEw5NjMgNDgxIEw5MzUgNDYxIFoiIGZpbGw9InVybCgjbWV0YWwpIiBzdHJva2U9IiM2MjQ3MkYiIHN0cm9rZS13aWR0aD0iNCIvPgogICAgPHBhdGggZD0iTTk0NCA0NTggTDkzMyA0NzUiIHN0cm9rZT0iIzJBMUIxMyIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgICA8cGF0aCBkPSJNOTQ2IDQ1OSBMOTM3IDQ3NCIgc3Ryb2tlPSIjRTlENUFGIiBzdHJva2Utd2lkdGg9IjEuNSIvPgogIDwvZz4KICA8IS0tIExQIGxldHRlcmluZyBhbmQgdW5kZXJsaW5lIC0tPgogIDxnPgogICAgPHRleHQgeD0iMTIwMCIgeT0iMzkyIiBmb250LWZhbWlseT0iR2VvcmdpYSwgJ1RpbWVzIE5ldyBSb21hbicsIHNlcmlmIiBmb250LXNpemU9IjI3NCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZvbnQtc3R5bGU9Iml0YWxpYyIKICAgICAgICAgIGZpbGw9InVybCgjbHBUZXh0KSIgc3Ryb2tlPSIjRTZDNDlBIiBzdHJva2Utd2lkdGg9IjUiIHBhaW50LW9yZGVyPSJzdHJva2UgZmlsbCIgbGV0dGVyLXNwYWNpbmc9Ii0xMiI+TFA8L3RleHQ+CiAgICA8cGF0aCBkPSJNMTIwMiA0MjMgSDE5MDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzVBM0MyQSIgc3Ryb2tlLXdpZHRoPSIxMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgICA8cGF0aCBkPSJNMTIwMiA0MjEgSDE5MDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0idXJsKCNtZXRhbCkiIHN0cm9rZS13aWR0aD0iNSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgICA8cGF0aCBkPSJNMTIzNSA0NDIgSDE4NDUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzNBMkEyMCIgc3Ryb2tlLXdpZHRoPSI0IiBzdHJva2UtbGluZWNhcD0icm91bmQiIG9wYWNpdHk9Ii43NSIvPgogIDwvZz4KPC9zdmc+Cg==" alt="FoZoWo LP" width="2000" height="620" draggable="false">
+  <div class="scene-wrap">
+    <svg id="turntableArt" viewBox="0 0 735 711" role="img" aria-label="茶色いレコードとドラッグできるトーンアーム">
+      <defs>
+        <radialGradient id="vinylBrown" cx="37%" cy="28%" r="77%"><stop offset="0" stop-color="#4b2e20"/><stop offset=".58" stop-color="#382116"/><stop offset=".88" stop-color="#29170f"/><stop offset="1" stop-color="#170d08"/></radialGradient>
+        <radialGradient id="labelBrown" cx="32%" cy="24%" r="78%"><stop offset="0" stop-color="#d99a5d"/><stop offset=".5" stop-color="#bd7844"/><stop offset="1" stop-color="#8b4d2b"/></radialGradient>
+        <linearGradient id="armMetal" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#604b37"/><stop offset=".25" stop-color="#e0d1b1"/><stop offset=".52" stop-color="#8d7355"/><stop offset=".77" stop-color="#f0e5ce"/><stop offset="1" stop-color="#5c4631"/></linearGradient>
+        <radialGradient id="pivotMetal" cx="32%" cy="25%"><stop offset="0" stop-color="#e8d8b6"/><stop offset=".45" stop-color="#b49a75"/><stop offset=".82" stop-color="#6b5138"/><stop offset="1" stop-color="#3b2819"/></radialGradient>
+        <filter id="diskShadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="1" dy="4" stdDeviation="5" flood-color="#5e4933" flood-opacity=".26"/></filter>
+        <linearGradient id="orangeFacet" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e2a16b"/><stop offset="1" stop-color="#9b4f2c"/></linearGradient>
+      </defs>
+      <!-- LP silhouette closely follows the supplied flat illustration, recolored in warm brown. -->
+      <g filter="url(#diskShadow)">
+        <g id="recordSpin">
+          <circle cx="342" cy="352" r="290" class="record-surface"/>
+          <circle cx="342" cy="352" r="282" class="groove-glint"/>
+          <circle cx="342" cy="352" r="271" class="groove"/><circle cx="342" cy="352" r="250" class="groove"/>
+          <circle cx="342" cy="352" r="229" class="groove"/><circle cx="342" cy="352" r="208" class="groove"/>
+          <circle cx="342" cy="352" r="187" class="groove"/><circle cx="342" cy="352" r="166" class="groove"/>
+          <circle cx="342" cy="352" r="145" class="groove"/><circle cx="342" cy="352" r="124" class="groove"/>
+          <circle cx="342" cy="352" r="103" class="groove"/>
+          <circle cx="342" cy="352" r="288" fill="none" stroke="#160c07" stroke-width="2"/>
+          <path d="M342 65 A287 287 0 0 1 628 352 L592 352 A250 250 0 0 0 342 102 Z" fill="#d0a47c" opacity=".055"/>
+          <path d="M342 352 L347 66 A286 286 0 0 1 617 309 Z" fill="#d9b28a" opacity=".045"/>
+          <circle cx="342" cy="352" r="90" fill="url(#labelBrown)" stroke="#6f3d22" stroke-width="2"/>
+          <path d="M347 265 L423 375 L268 406 Z" fill="#8f4827" opacity=".27"/>
+          <path d="M347 265 L367 317 L423 375 L385 383 Z" fill="#e9b17c" opacity=".17"/>
+          <circle cx="342" cy="352" r="37" fill="#cf874d" opacity=".7"/>
+          <circle cx="342" cy="352" r="8.5" fill="#28170e" stroke="#e2b07c" stroke-width="1.4"/>
+          <circle cx="342" cy="352" r="2.5" fill="#0d0906"/>
+          <path d="M110 301 A234 234 0 0 1 191 161" fill="none" stroke="#b2835e" stroke-width="2" opacity=".16"/>
+        </g>
+      </g>
+      <!-- Drag the tonearm or stylus head. The complete arm swings from the fixed pivot. -->
+      <g id="tonearm" transform="rotate(0 651 201)" aria-label="ドラッグして動かせる針">
+        <!-- Scale the arm around its pivot so the needle reaches the pictured inner-groove end point. -->
+        <g transform="translate(52.08 16.08) scale(0.92)">
+        <path class="arm-hit" d="M650 177 L633 301 L620 410 Q617 438 599 467 L559 540"/>
+        <path class="arm-outline" d="M650 177 L633 301 L620 410 Q617 438 599 467 L559 540"/>
+        <path class="arm-light" d="M652 179 L636 302 L623 409 Q620 436 602 465 L563 537"/>
+        <!-- counterweight end and connecting stem -->
+        <path d="M653 123 L644 177 M672 126 L658 179" fill="none" stroke="#6c533b" stroke-width="3"/>
+        <path d="M654 122 L659 57 L696 64 L681 126 Z" fill="#e2d6bd" fill-opacity=".76" stroke="#5e4a35" stroke-width="2"/>
+        <path d="M660 63 L690 68 L678 121" fill="none" stroke="#fff4d8" stroke-width="1.2" opacity=".85"/>
+        <!-- cartridge and stylus -->
+        <path class="cartridge" d="M565 526 L552 552 L569 565 L587 536 Z"/>
+        <path d="M568 530 L557 550 L568 557 L581 536 Z" fill="#e4d3b4" opacity=".75"/>
+        <path class="stylus" d="M560 560 L551 573"/>
+        <circle cx="551" cy="573" r="2.2" fill="#332319"/>
+        </g>
+      </g>
+      <!-- Fixed pivot cap stays in place as the arm swings. -->
+      <circle cx="651" cy="201" r="27" fill="url(#pivotMetal)" stroke="#58432e" stroke-width="2.4"/>
+      <circle cx="651" cy="201" r="22" fill="none" stroke="#ead9b8" stroke-width="1.2" opacity=".8"/>
+      <circle cx="651" cy="201" r="8" fill="#725438" stroke="#e7d4b2" stroke-width="1.6"/>
+      <circle cx="651" cy="201" r="3" fill="#372216"/>
+    </svg>
+  </div>
+
+  <section class="controls" aria-label="プレーヤー操作">
+    <button id="loadBtn" class="btn load" type="button">＋ 音源を選択</button>
+    <button id="playBtn" class="btn play" type="button" aria-label="再生">▶ 再生</button>
+    <button id="stopBtn" class="btn stop" type="button" aria-label="停止">■ 停止</button>
+    <button id="rpm33" class="btn" type="button" aria-pressed="true">33⅓ RPM</button>
+    <button id="rpm45" class="btn" type="button" aria-pressed="false">45 RPM</button>
+    <span class="track" id="trackName">音源未選択</span>
+    <input id="fileInput" class="file-input" type="file" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.flac" aria-label="音源ファイル選択">
+  </section>
+  <div id="status" class="status" aria-live="polite">針のアームをドラッグして動かせます。音源を選択して再生してください。</div>
+  <audio id="audio" preload="metadata"></audio>
+</main>
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const svg = $('turntableArt');
+  const record = $('recordSpin');
+  const tonearm = $('tonearm');
+  const audio = $('audio');
+  const fileInput = $('fileInput');
+  const loadBtn = $('loadBtn');
+  const playBtn = $('playBtn');
+  const stopBtn = $('stopBtn');
+  const rpm33 = $('rpm33');
+  const rpm45 = $('rpm45');
+  const status = $('status');
+  const trackName = $('trackName');
+  const PIVOT = { x:651, y:201 };
+  const START_TIP = { x:551, y:573 };
+  const START_DIR = Math.atan2(START_TIP.y - PIVOT.y, START_TIP.x - PIVOT.x);
+  const MAX_SWEEP = 23;
+  const RPM45_RATE = 45 / (100 / 3);
+  let rpm = 33;
+  let armAngle = 0;
+  let dragging = false;
+  let dragPointerAngle = 0;
+  let dragArmStart = 0;
+  let fileUrl = '';
+  let audioContext = null;
+  let audioSource = null;
+  let noiseGain = null;
+  let noiseSource = null;
+  let crackleBuffer = null;
+  let crackleTimer = null;
+  let rotationFrame = 0;
+  let lastFrameTime = 0;
+  let rotationAngle = 0;
+
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  function applyRpm() {
+    const rate = rpm === 45 ? RPM45_RATE : 1;
+    audio.playbackRate = rate;
+    audio.defaultPlaybackRate = rate;
+    if ('preservesPitch' in audio) audio.preservesPitch = false;
+    if ('webkitPreservesPitch' in audio) audio.webkitPreservesPitch = false;
+    rpm33.setAttribute('aria-pressed', String(rpm === 33));
+    rpm45.setAttribute('aria-pressed', String(rpm === 45));
+    status.textContent = audio.src ? `${rpm === 45 ? '45 RPM' : '33⅓ RPM'} · ${audio.paused ? '停止中' : '再生中'}` : `${rpm === 45 ? '45 RPM' : '33⅓ RPM'} · 音源を選択してください`;
+  }
+  function setArmAngle(degrees, syncAudio = false) {
+    armAngle = clamp(degrees, 0, MAX_SWEEP);
+    tonearm.setAttribute('transform', `rotate(${armAngle.toFixed(3)} ${PIVOT.x} ${PIVOT.y})`);
+    if (syncAudio && Number.isFinite(audio.duration) && audio.duration > 0) {
+      try { audio.currentTime = (armAngle / MAX_SWEEP) * audio.duration; } catch (_) {}
+    }
+  }
+  function angleFromProgress() {
+    if (Number.isFinite(audio.duration) && audio.duration > 0) {
+      setArmAngle((audio.currentTime / audio.duration) * MAX_SWEEP, false);
+    }
+  }
+  function svgPointFromEvent(e) {
+    const p = svg.createSVGPoint();
+    p.x = e.clientX; p.y = e.clientY;
+    return p.matrixTransform(svg.getScreenCTM().inverse());
+  }
+  function pointAngle(point) { return Math.atan2(point.y - PIVOT.y, point.x - PIVOT.x); }
+  function angleDelta(a, b) {
+    let d = a - b;
+    while (d > Math.PI) d -= Math.PI * 2;
+    while (d < -Math.PI) d += Math.PI * 2;
+    return d;
+  }
+  tonearm.addEventListener('pointerdown', e => {
+    if (e.button !== undefined && e.button !== 0) return;
+    const pt = svgPointFromEvent(e);
+    dragging = true;
+    dragPointerAngle = pointAngle(pt);
+    dragArmStart = armAngle;
+    tonearm.classList.add('dragging');
+    try { tonearm.setPointerCapture(e.pointerId); } catch (_) {}
+    e.preventDefault();
+  });
+  tonearm.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    const pt = svgPointFromEvent(e);
+    const delta = angleDelta(pointAngle(pt), dragPointerAngle) * 180 / Math.PI;
+    setArmAngle(dragArmStart + delta, true);
+    e.preventDefault();
+  });
+  function endDrag(e) {
+    if (!dragging) return;
+    dragging = false;
+    tonearm.classList.remove('dragging');
+    if (e && e.pointerId !== undefined) { try { tonearm.releasePointerCapture(e.pointerId); } catch (_) {} }
+    status.textContent = Number.isFinite(audio.duration) && audio.duration > 0
+      ? `針位置 ${(armAngle / MAX_SWEEP * 100).toFixed(0)}% · ${rpm === 45 ? '45 RPM' : '33⅓ RPM'}`
+      : '針を動かせます。音源を選択すると再生位置も連動します。';
+  }
+  tonearm.addEventListener('pointerup', endDrag);
+  tonearm.addEventListener('pointercancel', endDrag);
+  tonearm.addEventListener('lostpointercapture', () => { if (dragging) endDrag(); });
+
+  function spinFrame(now) {
+    if (!rotationFrame) return;
+    if (!audio.paused && lastFrameTime) {
+      const dt = Math.min(80, now - lastFrameTime);
+      // Deliberately slow visual spin: 33⅓ takes 6 seconds/revolution; 45 remains proportionally faster.
+      const period = rpm === 45 ? 4.444444 : 6.0;
+      rotationAngle = (rotationAngle + dt / (period * 1000) * 360) % 360;
+      record.setAttribute('transform', `rotate(${rotationAngle.toFixed(3)} 342 352)`);
+    }
+    lastFrameTime = now;
+    if (!audio.paused) angleFromProgress();
+    rotationFrame = requestAnimationFrame(spinFrame);
+  }
+  function setRunning(running) {
+    playBtn.textContent = running ? 'Ⅱ 一時停止' : '▶ 再生';
+    playBtn.setAttribute('aria-label', running ? '一時停止' : '再生');
+    playBtn.setAttribute('aria-pressed', String(running));
+    status.textContent = running ? `${rpm === 45 ? '45 RPM' : '33⅓ RPM'} · LP再生中` : (audio.src ? '停止中' : '音源を選択してください');
+    if (running && !rotationFrame) { lastFrameTime = 0; rotationFrame = requestAnimationFrame(spinFrame); }
+    if (!running && rotationFrame) { cancelAnimationFrame(rotationFrame); rotationFrame = 0; lastFrameTime = 0; }
+    if (noiseGain && audioContext) {
+      const now = audioContext.currentTime;
+      noiseGain.gain.cancelScheduledValues(now);
+      noiseGain.gain.setTargetAtTime(running ? 0.0025 : 0, now, running ? .18 : .05);
+    }
+    if (running) scheduleCrackle();
+    else if (crackleTimer) { clearTimeout(crackleTimer); crackleTimer = null; }
+  }
+  async function ensureAudioGraph() {
+    if (audioContext) {
+      if (audioContext.state === 'suspended') await audioContext.resume();
+      return;
+    }
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    try {
+      audioContext = new AC();
+      audioSource = audioContext.createMediaElementSource(audio);
+      const warmth = audioContext.createBiquadFilter();
+      warmth.type = 'lowshelf'; warmth.frequency.value = 170; warmth.gain.value = 1.7;
+      const soft = audioContext.createBiquadFilter();
+      soft.type = 'lowpass'; soft.frequency.value = 14500; soft.Q.value = .55;
+      const saturation = audioContext.createWaveShaper();
+      const curve = new Float32Array(1024);
+      for (let i=0;i<curve.length;i++){const x=(i*2)/(curve.length-1)-1;curve[i]=Math.tanh(1.08*x)/Math.tanh(1.08);}
+      saturation.curve = curve; saturation.oversample = '2x';
+      const master = audioContext.createGain(); master.gain.value = .94;
+      audioSource.connect(warmth); warmth.connect(soft); soft.connect(saturation); saturation.connect(master); master.connect(audioContext.destination);
+      const buffer = audioContext.createBuffer(1, audioContext.sampleRate * 2, audioContext.sampleRate);
+      const data = buffer.getChannelData(0); let last=0;
+      for(let i=0;i<data.length;i++){last=last*.25+(Math.random()*2-1)*.75;data[i]=last;}
+      noiseSource = audioContext.createBufferSource(); noiseSource.buffer=buffer; noiseSource.loop=true;
+      const noiseFilter=audioContext.createBiquadFilter();noiseFilter.type='bandpass';noiseFilter.frequency.value=2400;noiseFilter.Q.value=.65;
+      noiseGain=audioContext.createGain();noiseGain.gain.value=0;
+      noiseSource.connect(noiseFilter);noiseFilter.connect(noiseGain);noiseGain.connect(master);noiseSource.start();
+      crackleBuffer=audioContext.createBuffer(1,Math.ceil(audioContext.sampleRate*.015),audioContext.sampleRate);
+      const cd=crackleBuffer.getChannelData(0);for(let i=0;i<cd.length;i++)cd[i]=(Math.random()*2-1)*Math.exp(-i/(cd.length*.15));
+      await audioContext.resume();
+    } catch (_) {
+      // Unsupported audio processing falls back to native playback.
+      if (audioContext && audioContext.state !== 'closed') { try { await audioContext.close(); } catch (_) {} }
+      audioContext=null;audioSource=null;noiseGain=null;noiseSource=null;crackleBuffer=null;
+    }
+  }
+  function popCrackle() {
+    if (!audioContext || !crackleBuffer || audio.paused || !noiseGain) return;
+    try {
+      const src=audioContext.createBufferSource();src.buffer=crackleBuffer;
+      const filter=audioContext.createBiquadFilter();filter.type='highpass';filter.frequency.value=1000;
+      const gain=audioContext.createGain();gain.gain.value=.003+Math.random()*.003;
+      src.connect(filter);filter.connect(gain);gain.connect(audioContext.destination);src.start();src.stop(audioContext.currentTime+.018);
+    } catch (_) {}
+  }
+  function scheduleCrackle() {
+    if (crackleTimer) clearTimeout(crackleTimer);
+    if (audio.paused) return;
+    crackleTimer=setTimeout(()=>{if(!audio.paused){if(Math.random()<.55)popCrackle();scheduleCrackle();}},650+Math.random()*1500);
+  }
+  loadBtn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => {
+    const file=fileInput.files && fileInput.files[0]; if(!file)return;
+    audio.pause();setRunning(false);
+    if(fileUrl)URL.revokeObjectURL(fileUrl);
+    fileUrl=URL.createObjectURL(file);audio.src=fileUrl;audio.load();
+    trackName.textContent=file.name;trackName.title=file.name;
+    try{audio.currentTime=0;}catch(_){}
+    setArmAngle(0,false);status.textContent='音源を読み込みました。再生ボタンを押してください。';
+    fileInput.value='';
+  });
+  playBtn.addEventListener('click', async () => {
+    if (!audio.src) { status.textContent='先に音源を選択してください。';fileInput.click();return; }
+    if (!audio.paused) { audio.pause();setRunning(false);return; }
+    try { await ensureAudioGraph();applyRpm();await audio.play();setRunning(true); }
+    catch (_) { status.textContent='再生できませんでした。MP3またはWAVをお試しください。'; }
+  });
+  stopBtn.addEventListener('click', () => {
+    audio.pause();try{audio.currentTime=0;}catch(_){}
+    setArmAngle(0,false);setRunning(false);
+    status.textContent=audio.src?'停止しました。':'先に音源を選択してください。';
+  });
+  function chooseRpm(v){rpm=v;applyRpm();}
+  rpm33.addEventListener('click',()=>chooseRpm(33));
+  rpm45.addEventListener('click',()=>chooseRpm(45));
+  audio.addEventListener('timeupdate',()=>{if(!dragging)angleFromProgress();});
+  audio.addEventListener('loadedmetadata',()=>{if(!dragging)angleFromProgress();});
+  audio.addEventListener('seeked',()=>{if(!dragging)angleFromProgress();});
+  audio.addEventListener('play',()=>setRunning(true));
+  audio.addEventListener('pause',()=>setRunning(false));
+  audio.addEventListener('ended',()=>{setRunning(false);setArmAngle(MAX_SWEEP,false);status.textContent='再生が終了しました。';});
+  audio.addEventListener('error',()=>{if(audio.src){setRunning(false);status.textContent='この音源を再生できません。MP3またはWAVをお試しください。';}});
+  window.addEventListener('beforeunload',()=>{if(fileUrl)URL.revokeObjectURL(fileUrl);if(crackleTimer)clearTimeout(crackleTimer);if(rotationFrame)cancelAnimationFrame(rotationFrame);if(audioContext&&audioContext.state!=='closed')audioContext.close();});
+  setArmAngle(0,false);applyRpm();
+})();
+</script>
+</body>
+</html>
